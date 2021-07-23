@@ -1,0 +1,74 @@
+# Prepare and subset VCF and BED files
+Use the code from trans-eQTL analysis
+
+# Convert VCF to PED
+```{bash, eval=FALSE}
+# Set family ID all to 0
+plink --vcf subset.vcf.gz --recode --out ped_file --const-fid --make-bed
+```
+
+# Generate GRM
+```{bash, eval=FALSE}
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 1 --maf 0.01 --out ped_file1 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 2 --maf 0.01 --out ped_file2 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 3 --maf 0.01 --out ped_file3 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 4 --maf 0.01 --out ped_file4 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 5 --maf 0.01 --out ped_file5 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 6 --maf 0.01 --out ped_file6 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 7 --maf 0.01 --out ped_file7 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 8 --maf 0.01 --out ped_file8 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 9 --maf 0.01 --out ped_file9 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 10 --maf 0.01 --out ped_file10 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 11 --maf 0.01 --out ped_file11 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 12 --maf 0.01 --out ped_file12 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 13 --maf 0.01 --out ped_file13 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 14 --maf 0.01 --out ped_file14 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 15 --maf 0.01 --out ped_file15 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 16 --maf 0.01 --out ped_file16 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 17 --maf 0.01 --out ped_file17 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 18 --maf 0.01 --out ped_file18 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 19 --maf 0.01 --out ped_file19 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 20 --maf 0.01 --out ped_file20 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 21 --maf 0.01 --out ped_file21 --thread-num 4
+gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 22 --maf 0.01 --out ped_file22 --thread-num 4
+
+gcta64 --mgrm grm_chrs.txt --make-grm-bin --out test_grm
+
+# Can also run on X chromosome, but need to include sex information into the VCF 
+# to PED conversion step
+
+# gcta64 --make-grm-xchr --bfile filtered --out filtered_xchr
+```
+
+# Run GREML
+First, we need to generate a phenotype file
+```{r, eval=FALSE}
+bed_file = read.table(pipe('zcat sPsychENCODE-gene.BED.gz | sed -e 1s/.//'), 
+                      header = TRUE, sep='\t')
+fam_id = rep(x = 0, times=dim(bed_file)[2] - 6)
+sample_id = scan(text = readLines('sPsychENCODE-gene.BED.gz', 1), what = "", 
+                 quiet = TRUE)[-(1:6)]
+phenotype_id = bed_file[,'pid']
+phenotypes = bed_file[,7:dim(bed_file)[2]]
+phenotypes = t(as.matrix(phenotypes))
+colnames(phenotypes) = phenotype_id
+rownames(phenotypes) = sample_id
+
+write.table(cbind(phenotype_id, bed_file[,'Chr']), 'phenotype_ids', 
+            col.names=FALSE, row.names=FALSE, quote=FALSE)
+
+pheno_file = cbind(fam_id, sample_id, phenotypes)
+write.table(pheno_file, 'phenotype', sep='\t', col.names=FALSE, row.names=FALSE, 
+            quote=FALSE)
+```
+
+Now we run GCTA
+```{bash, eval=FALSE}
+gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm test_chrs.txt --pheno phenotype --out test
+```
+
+# Notes
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5294670/  
+The above paper treats cis-eQTLs as those where the SNP and effect are on the same 
+chromosome, and trans if not.
+
