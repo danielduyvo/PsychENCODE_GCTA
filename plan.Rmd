@@ -1,5 +1,6 @@
 # Prepare and subset VCF and BED files
-Use the code from trans-eQTL analysis
+Use the code from trans-eQTL analysis, which subset the data into European frontal 
+cortex samples and regressed out covariates
 
 # Convert VCF to PED
 ```{bash, eval=FALSE}
@@ -7,44 +8,87 @@ Use the code from trans-eQTL analysis
 plink --vcf subset.vcf.gz --recode --out ped_file --const-fid --make-bed
 ```
 
-# Generate GRM
+# Generate complete GRM
+Currently, the GRM is split by chromosome; if we set a X-Mbase window we'll have to 
+generate a new set of GRMs for each phenotype.
 ```{bash, eval=FALSE}
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 1 --maf 0.01 --out ped_file1 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 2 --maf 0.01 --out ped_file2 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 3 --maf 0.01 --out ped_file3 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 4 --maf 0.01 --out ped_file4 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 5 --maf 0.01 --out ped_file5 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 6 --maf 0.01 --out ped_file6 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 7 --maf 0.01 --out ped_file7 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 8 --maf 0.01 --out ped_file8 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 9 --maf 0.01 --out ped_file9 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 10 --maf 0.01 --out ped_file10 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 11 --maf 0.01 --out ped_file11 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 12 --maf 0.01 --out ped_file12 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 13 --maf 0.01 --out ped_file13 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 14 --maf 0.01 --out ped_file14 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 15 --maf 0.01 --out ped_file15 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 16 --maf 0.01 --out ped_file16 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 17 --maf 0.01 --out ped_file17 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 18 --maf 0.01 --out ped_file18 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 19 --maf 0.01 --out ped_file19 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 20 --maf 0.01 --out ped_file20 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 21 --maf 0.01 --out ped_file21 --thread-num 4
-gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr 22 --maf 0.01 --out ped_file22 --thread-num 4
+#!/bin/bash
+for ((i=1;i<=22;i++)); do
+    gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr $i --out grms/ped_file$i --thread-num $(nproc --all)
+done
 
-gcta64 --mgrm grm_chrs.txt --make-grm-bin --out test_grm
+gcta64 --mgrm grm_chrs/all_chrs.txt --make-grm-bin --out grms/complete
+```
 
-# Can also run on X chromosome, but need to include sex information into the VCF 
-# to PED conversion step
+# Generate histogram and report how many pairs have a relatedness > 0.025, > 0.05.
+```{r, eval=FALSE}
+# R script to read the GRM binary file
+ReadGRMBin=function(prefix, AllN=F, size=4){
+    sum_i=function(i){
+        return(sum(1:i))
+    }
+    BinFileName=paste(prefix,".grm.bin",sep="")
+    NFileName=paste(prefix,".grm.N.bin",sep="")
+    IDFileName=paste(prefix,".grm.id",sep="")
+    id = read.table(IDFileName)
+    n=dim(id)[1]
+    BinFile=file(BinFileName, "rb");
+    grm=readBin(BinFile, n=n*(n+1)/2, what=numeric(0), size=size)
+    NFile=file(NFileName, "rb");
+    if(AllN==T){
+        N=readBin(NFile, n=n*(n+1)/2, what=numeric(0), size=size)
+    }
+    else N=readBin(NFile, n=1, what=numeric(0), size=size)
+    i=sapply(1:n, sum_i)
+    return(list(diag=grm[i], off=grm[-i], id=id, N=N))
+}
 
-# gcta64 --make-grm-xchr --bfile filtered --out filtered_xchr
+grm = ReadGRMBin('grms/complete')
+
+library('ggplot2')
+png('graphs/grm_histogram.png')
+ggplot(data = data.frame(off=grm[['off']])) + geom_histogram(mapping = aes(x=off), bins=100)
+dev.off()
+
+png('graphs/trunc_grm_histogram.png')
+ggplot(data = data.frame(off=grm[['off']][grm[['off']] < 0.05])) + geom_histogram(mapping = aes(x=off), bins=100)
+dev.off()
+# 593 pairs with GR > 0.025
+# 5 pairs with GR > 0.05
+
+(1:369370)[grm[['off']] > 0.05]
+# [1]  32885  96111 220679 286033 344630
+# Related pairs:
+# [256, 245]
+# [438, 408]
+# [664, 563]
+# [756, 643]
+# [830, 595]
+```
+
+# Subset GRM to filter out cryptic relatedness (GR > 0.05)
+```{bash, eval=FALSE}
+gcta64 --grm grms/complete --grm-cutoff 0.05 --make-grm-bin --out grms/unrelated
+# running diff on the complete.grm.id and unrelated.grm.id files gives us 
+# the 5 ommitted samples
+# CMC_MSSM_307
+# CMC_PITT_077
+# Br1977
+# Br1876
+# Br2173
 ```
 
 # Run GREML
-First, we need to generate a phenotype file
+First, we need to generate a phenotype file.
 ```{r, eval=FALSE}
+# 1 Mbase window
+window_size = 1e6
 bed_file = read.table(pipe('zcat sPsychENCODE-gene.BED.gz | sed -e 1s/.//'), 
                       header = TRUE, sep='\t')
+bed_file[, 'Chr'] = sapply(X = bed_file[, 'Chr'], FUN = function(chr_str) {
+                           return(gsub('[^0-9]', '', chr_str))
+                      })
+bed_file[bed_file[, 'Chr'] == '', 'Chr'] = '0'
 fam_id = rep(x = 0, times=dim(bed_file)[2] - 6)
 sample_id = scan(text = readLines('sPsychENCODE-gene.BED.gz', 1), what = "", 
                  quiet = TRUE)[-(1:6)]
@@ -54,21 +98,77 @@ phenotypes = t(as.matrix(phenotypes))
 colnames(phenotypes) = phenotype_id
 rownames(phenotypes) = sample_id
 
-write.table(cbind(phenotype_id, bed_file[,'Chr']), 'phenotype_ids', 
-            col.names=FALSE, row.names=FALSE, quote=FALSE)
+window_start = bed_file[, 'start'] - window_size
+window_start[window_start < 0] = 0
+
+window_end = bed_file[, 'end'] + window_size
+
+phenotype_info = cbind(phenotype_id, bed_file[,c('Chr', 'start', 'end')], window_start, window_end)
+
+write.table(phenotype_info, 'phenotype_ids', col.names=FALSE, row.names=FALSE, quote=FALSE)
 
 pheno_file = cbind(fam_id, sample_id, phenotypes)
 write.table(pheno_file, 'phenotype', sep='\t', col.names=FALSE, row.names=FALSE, 
             quote=FALSE)
 ```
 
-Now we run GCTA
+Now we run GREML. This following script finds the variance for all unrelated individuals, 
+then finds the variance for ENSG00000227232.
 ```{bash, eval=FALSE}
-gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm test_chrs.txt --pheno phenotype --out test
+gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --grm grms/unrelated --pheno phenotype --out test
+gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm chrs/test_chrs.txt --pheno phenotype --out test
+```
+
+# Automating for all SNPs
+
+## Necessary steps
+1. Generate subsets of SNPs in cis and trans regions from PLINK  
+2. Generate GRM of the cis and trains subsets  
+3. Generate mgrm.txt
+4. Run GREML  
+Script is written in run\_all.sh
+
+```{bash, eval=FALSE}
+# Step 1
+
+# grm_ranges/ENSG00000227232.txt
+# Chr Start End ID
+# 1 0 1029806 R1
+
+# grm_chrs/ENSG00000227232.txt
+# grms/ENSG00000227232_trans_int
+# grms/ped_file2
+# ...
+# grms/ped_file22
+
+plink --bfile ped_file --extract range grm_ranges/ENSG00000227232.txt --remove removed_samples.txt --make-bed --out fin_peds/ENSG00000227232_cis
+plink --bfile ped_file --exclude range grm_ranges/ENSG00000227232.txt --remove removed_samples.txt --make-bed --out fin_peds/ENSG00000227232_trans
+
+# Step 2
+gcta64 --make-grm-bin --bfile fin_peds/ENSG00000227232_cis --make-grm-alg 0 --out grms/ENSG00000227232_cis # 47 SNPs
+gcta64 --make-grm-bin --bfile fin_peds/ENSG00000227232_trans --make-grm-alg 0 --chr 1 --out grms/ENSG00000227232_trans_int
+gcta64 --make-grm-bin --mgrm grm_chrs/ENSG00000227232.txt --out grms/ENSG00000227232_trans # 5312461 SNPs
+
+# Step 3
+# mgrms/ENSG00000227232.txt
+# grms/ENSG00000227232_cis
+# grms/ENSG00000227232_trans
+
+# Step 4
+gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/ENSG00000227232.txt --pheno phenotype --out hsqs/ENSG00000227232 || \
+gcta64 --reml --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/ENSG00000227232.txt --pheno phenotype --out hsqs/ENSG00000227232
+
+# Step 5 (Optional cleanup)
+rm grm_ranges/ENSG00000227232.txt
+rm fin_peds/ENSG00000227232_*
+rm grms/ENSG00000227232_*
+rm mgrms/ENSG00000227232.txt
 ```
 
 # Notes
-https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5294670/  
+[The Genetic Architecture of Gene Expression in Peripheral Blood](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5294670/)  
 The above paper treats cis-eQTLs as those where the SNP and effect are on the same 
-chromosome, and trans if not.
+chromosome, and trans if not:  
+"cis-eQTL were defined to be those associations where the SNP was located on the same 
+chromosome as the gene, and trans-eQTL the complement of this."
 
