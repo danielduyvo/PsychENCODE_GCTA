@@ -3,8 +3,8 @@ set -x
 cat test_phenotype_ids | while read line; do
 echo $line | \
     (
-        read ID CHR START END W_START W_END
-        printf "ID: %s\tCHR: %s\n" $ID $CHR
+    read ID CHR START END W_START W_END
+    printf "ID: %s\tCHR: %s\n" $ID $CHR
 
         # Check if the chromosome is a sex chromosome
         if [[ $CHR -eq 0 ]]; then
@@ -30,13 +30,13 @@ echo $line | \
         plink --bfile ped_file --exclude range grm_ranges/$ID.txt --chr $CHR --remove removed_samples.txt --make-bed --out fin_peds/${ID}_trans_int
 
         # Generate the GRMs for the cis and trans regions
-        gcta64 --make-grm-bin --bfile fin_peds/${ID}_cis --make-grm-alg 0 --out grms/${ID}_cis
-        gcta64 --make-grm-bin --bfile fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR --out grms/${ID}_trans_int
-        gcta64 --make-grm-bin --mgrm grm_chrs/$ID.txt --out grms/${ID}_trans
+        gcta64 --make-grm-bin --thread-num $(nproc --all) --bfile fin_peds/${ID}_cis --make-grm-alg 0 --out grms/${ID}_cis
+        gcta64 --make-grm-bin --thread-num $(nproc --all) --bfile fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR --out grms/${ID}_trans_int
+        gcta64 --make-grm-bin --thread-num $(nproc --all) --mgrm grm_chrs/$ID.txt --out grms/${ID}_trans
 
         # Run GREML, defaulting to EM if AI fails
-        gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
-            gcta64 --reml --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
+        gcta64 --reml --thread-num $(nproc --all) --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
+            gcta64 --reml --thread-num $(nproc --all) --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
 
         # Clean up files
         # rm grm_ranges/$ID.txt
