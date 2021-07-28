@@ -1,7 +1,20 @@
 #!/bin/bash
+
+# qsub options
+#$ -w e
+#$ -N GCTA_analysis
+#$ -l h_data=8G,h_rt=8:00:00,highp
+#$ -pe shared 2
+#$ -cwd
+#$ -V
+#$ -o qsub.log
+#$ -e qsub.err
+#$ -m a
+#$ -M danieldu
+#$ -t 1-25774
 set -x
-cat test_phenotype_ids | while read line; do
-echo $line | \
+LINE=$(sed -n ${SGE_TASK_ID}p phenotype_ids)
+echo $LINE | \
     (
     read ID CHR START END W_START W_END
     printf "ID: %s\tCHR: %s\n" $ID $CHR
@@ -30,19 +43,18 @@ echo $line | \
         plink --bfile ped_file --exclude range grm_ranges/$ID.txt --chr $CHR --remove removed_samples.txt --make-bed --out fin_peds/${ID}_trans_int
 
         # Generate the GRMs for the cis and trans regions
-        gcta64 --make-grm-bin --thread-num $(nproc --all) --bfile fin_peds/${ID}_cis --make-grm-alg 0 --out grms/${ID}_cis
-        gcta64 --make-grm-bin --thread-num $(nproc --all) --bfile fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR --out grms/${ID}_trans_int
-        gcta64 --make-grm-bin --thread-num $(nproc --all) --mgrm grm_chrs/$ID.txt --out grms/${ID}_trans
+        gcta64 --make-grm-bin --thread-num 2 --bfile fin_peds/${ID}_cis --make-grm-alg 0 --out grms/${ID}_cis
+        gcta64 --make-grm-bin --thread-num 2 --bfile fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR --out grms/${ID}_trans_int
+        gcta64 --make-grm-bin --thread-num 2 --mgrm grm_chrs/$ID.txt --out grms/${ID}_trans
 
         # Run GREML, defaulting to EM if AI fails
-        gcta64 --reml --thread-num $(nproc --all) --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
-            gcta64 --reml --thread-num $(nproc --all) --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
+        gcta64 --reml --thread-num 2 --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
+            gcta64 --reml --thread-num 2 --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
 
         # Clean up files
-        # rm grm_ranges/$ID.txt
-        # rm grm_chrs/$ID.txt
-        # rm mgrms/$ID.txt
-        # rm fin_peds/${ID}_*
-        # rm grms/${ID}_*
+        rm grm_ranges/$ID.txt
+        rm grm_chrs/$ID.txt
+        rm mgrms/$ID.txt
+        rm fin_peds/${ID}_*
+        rm grms/${ID}_*
     )
-done
