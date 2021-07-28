@@ -9,10 +9,8 @@ plink --vcf subset.vcf.gz --recode --out ped_file --const-fid --make-bed
 ```
 
 # Generate complete GRM
-Currently, the GRM is split by chromosome; if we set a X-Mbase window we'll have to 
-generate a new set of GRMs for each phenotype.
+We split the GRM by chromosome, and then combine it to generate a complete GRM.
 ```{bash, eval=FALSE}
-#!/bin/bash
 for ((i=1;i<=22;i++)); do
     gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr $i --out grms/ped_file$i --thread-num $(nproc --all)
 done
@@ -71,11 +69,15 @@ dev.off()
 gcta64 --grm grms/complete --grm-cutoff 0.05 --make-grm-bin --out grms/unrelated
 # running diff on the complete.grm.id and unrelated.grm.id files gives us 
 # the 5 ommitted samples
+
 # CMC_MSSM_307
 # CMC_PITT_077
 # Br1977
 # Br1876
 # Br2173
+
+# We write them to a file to use in GREML
+printf '0 CMC_MSSM_307\n0 CMC_PITT_077\n0 Br1977\n0 Br1876\n0 Br2173' > removed_samples.txt
 ```
 
 # Run GREML
@@ -112,13 +114,6 @@ write.table(pheno_file, 'phenotype', sep='\t', col.names=FALSE, row.names=FALSE,
             quote=FALSE)
 ```
 
-Now we run GREML. This following script finds the variance for all unrelated individuals, 
-then finds the variance for ENSG00000227232.
-```{bash, eval=FALSE}
-gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --grm grms/unrelated --pheno phenotype --out test
-gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm chrs/test_chrs.txt --pheno phenotype --out test
-```
-
 # Automating for all SNPs
 
 ## Necessary steps
@@ -128,6 +123,7 @@ gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm chrs/test_chrs.txt
 4. Run GREML  
 Script is written in run\_all.sh
 
+## Script for specifically ENSG00000227232
 ```{bash, eval=FALSE}
 # Step 1
 
@@ -163,6 +159,25 @@ rm grm_ranges/ENSG00000227232.txt
 rm fin_peds/ENSG00000227232_*
 rm grms/ENSG00000227232_*
 rm mgrms/ENSG00000227232.txt
+```
+# Processing HSQ files after generating them all
+
+## Combining the HSQ files
+```{bash, eval=FALSE}
+printf "V(cis) V(trans) V(env) V(pheno)" > all_variance.txt
+for i in hsqs/*.hsq; do
+    printf '\n' >> all_variance.txt
+    awk '(NR>=2&&NR<=5){print $2}' $i | tr '\n' ' ' >> all_variance.txt
+done
+```
+
+## Read in compiled HSQ data and return statistics
+```{r, eval=FALSE}
+hsqs = read.table('all_variance.txt', header=TRUE)
+hsqs[, "V.gen."] = hsqs[, "V.cis."] + hsqs[, "V.trans."]
+cis_prop = sum(hsqs[, "V.cis."])/sum(hsqs[, "V.gen."])
+trans_prop = sum(hsqs[, "V.trans."])/sum(hsqs[, "V.gen."])
+avg_snp_h2 = mean(apply(X=hsqs, MARGIN=1, function(row) row[5]/row[4]))
 ```
 
 # Notes

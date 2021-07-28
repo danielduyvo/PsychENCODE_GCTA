@@ -45,8 +45,8 @@ echo $LINE | \
             gcta64 --make-grm-bin --thread-num 2 --mgrm grm_chrs/$ID.txt --out grms/${ID}_trans
 
             # Run GREML, defaulting to EM if AI fails
-            gcta64 --reml --thread-num 2 --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
-                gcta64 --reml --thread-num 2 --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
+            gcta64 --reml --thread-num 2 --reml-alg 0 --reml-maxit 100 --mpheno ${SGE_TASK_ID} --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID || \
+                gcta64 --reml --thread-num 2 --reml-alg 2 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} --mgrm mgrms/$ID.txt --pheno phenotype --out hsqs/$ID
 
             # Clean up files
             rm grm_ranges/$ID.txt
