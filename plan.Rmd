@@ -162,22 +162,26 @@ rm mgrms/ENSG00000227232.txt
 ```
 # Processing HSQ files after generating them all
 
-## Combining the HSQ files
-```{bash, eval=FALSE}
-printf "V(cis) V(trans) V(env) V(pheno)" > all_variance.txt
-for i in hsqs/*.hsq; do
-    printf '\n' >> all_variance.txt
-    awk '(NR>=2&&NR<=5){print $2}' $i | tr '\n' ' ' >> all_variance.txt
-done
-```
-
-## Read in compiled HSQ data and return statistics
+## Combine the HSQ files and return statistics
 ```{r, eval=FALSE}
-hsqs = read.table('all_variance.txt', header=TRUE)
-hsqs[, "V.gen."] = hsqs[, "V.cis."] + hsqs[, "V.trans."]
-cis_prop = sum(hsqs[, "V.cis."])/sum(hsqs[, "V.gen."])
-trans_prop = sum(hsqs[, "V.trans."])/sum(hsqs[, "V.gen."])
-avg_snp_h2 = mean(apply(X=hsqs, MARGIN=1, function(row) row[5]/row[4]))
+temp = unlist(list.files(path="./hsqs", pattern="*.hsq"))
+hsqs = t(sapply(X=temp, function(file_name) {
+                  hsq = read.table(paste('hsqs/', file_name, sep=''), header=TRUE, nrows=4)
+                  # Gene ID, Cis, Trans, Cis+Trans, Residual, Phenotype
+                  line = c(substring(file_name, 1, nchar(file_name) - 4), 
+                           hsq[1,2], hsq[2,2], hsq[1,2] + hsq[2,2], hsq[3,2], hsq[4,2])
+                  return(line)
+            }))
+colnames(hsqs) = c("ID", "Cis", "Trans", "SNP", "Res", "Phe")
+rownames(hsqs) = hsqs[,"ID"]
+hsqs = as.data.frame(hsqs)
+hsqs = transform(hsqs, Cis=as.numeric(Cis), Trans=as.numeric(Trans), 
+                 SNP=as.numeric(SNP), Res=as.numeric(Res), Phe=as.numeric(Phe))
+write.table(hsqs, 'all_variance.txt', quote=FALSE, row.names=FALSE, col.names=TRUE)
+
+cis_prop = sum(hsqs[, "Cis"])/sum(hsqs[, "SNP"]) # 0.3395873
+trans_prop = sum(hsqs[, "Trans"])/sum(hsqs[, "SNP"]) # 0.6604127
+avg_snp_h2 = mean(apply(X=hsqs, MARGIN=1, function(row) as.numeric(row[4])/as.numeric(row[6]))) # 0.1087606
 ```
 
 # Notes
