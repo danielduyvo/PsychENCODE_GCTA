@@ -1,21 +1,42 @@
+# Set variables and set up environment
+```{bash, engine.opts='-l', eval=FALSE}
+PROJECT="1MBase"
+THREADS=2
+mkdir -p $PROJECT/output/fin_peds
+mkdir -p $PROJECT/output/graphs
+mkdir -p $PROJECT/output/grm_chrs
+mkdir -p $PROJECT/output/grm_ranges
+mkdir -p $PROJECT/output/grms
+mkdir -p $PROJECT/output/hsqs
+mkdir -p $PROJECT/output/mgrms
+mkdir -p $PROJECT/output/results
+mkdir -p $PROJECT/input/
+```
+
+```{r, eval=FALSE}
+PROJECT="1MBase"
+```
+
 # Prepare and subset VCF and BED files
 Use the code from trans-eQTL analysis, which subset the data into European frontal 
 cortex samples and regressed out covariates
 
 # Convert VCF to PED
-```{bash, eval=FALSE}
+```{bash, engine.opts='-l', eval=FALSE}
 # Set family ID all to 0
-plink --vcf subset.vcf.gz --recode --out ped_file --const-fid --make-bed
+plink --vcf data/${PROJECT}/input/subset.vcf.gz --recode --out data/${PROJECT}/input/ped_file --const-fid --make-bed
 ```
 
 # Generate complete GRM
 We split the GRM by chromosome, and then combine it to generate a complete GRM.
-```{bash, eval=FALSE}
+```{bash, engine.opts='-l', eval=FALSE}
+> data/${PROJECT}/output/grm_chrs/all_chrs.txt
 for ((i=1;i<=22;i++)); do
-    gcta64 --make-grm-bin --bfile ped_file --make-grm-alg 0 --chr $i --out grms/ped_file$i --thread-num $(nproc --all)
+    gcta64 --make-grm-bin --bfile data/${PROJECT}/input/ped_file --make-grm-alg 0 --chr $i --out data/${PROJECT}/output/grms/ped_file$i --thread-num ${THREADS}
+    printf "data/%s/output/grms/ped_file%s" $PROJECT $i >> data/${PROJECT}/output/grm_chrs/all_chrs.txt
 done
 
-gcta64 --mgrm grm_chrs/all_chrs.txt --make-grm-bin --out grms/complete
+gcta64 --mgrm data/${PROJECT}/output/grm_chrs/all_chrs.txt --make-grm-bin --out data/${PROJECT}/output/grms/complete
 ```
 
 # Generate histogram and report how many pairs have a relatedness > 0.025, > 0.05.
@@ -41,32 +62,23 @@ ReadGRMBin=function(prefix, AllN=F, size=4){
     return(list(diag=grm[i], off=grm[-i], id=id, N=N))
 }
 
-grm = ReadGRMBin('grms/complete')
+grm = ReadGRMBin(paste('data/', PROJECT, '/output/grms/complete', sep=''))
 
 library('ggplot2')
-png('graphs/grm_histogram.png')
+png(paste('data/', PROJECT, '/output/graphs/grm_histogram.png', sep=''))
 ggplot(data = data.frame(off=grm[['off']])) + geom_histogram(mapping = aes(x=off), bins=100)
 dev.off()
 
-png('graphs/trunc_grm_histogram.png')
+png(paste('data/', PROJECT, '/output/graphs/trunc_grm_histogram.png', sep=''))
 ggplot(data = data.frame(off=grm[['off']][grm[['off']] < 0.05])) + geom_histogram(mapping = aes(x=off), bins=100)
 dev.off()
 # 593 pairs with GR > 0.025
 # 5 pairs with GR > 0.05
-
-(1:369370)[grm[['off']] > 0.05]
-# [1]  32885  96111 220679 286033 344630
-# Related pairs:
-# [256, 245]
-# [438, 408]
-# [664, 563]
-# [756, 643]
-# [830, 595]
 ```
 
 # Subset GRM to filter out cryptic relatedness (GR > 0.05)
-```{bash, eval=FALSE}
-gcta64 --grm grms/complete --grm-cutoff 0.05 --make-grm-bin --out grms/unrelated
+```{bash, engine.opts='-l', eval=FALSE}
+gcta64 --grm data/${PROJECT}/output/grms/complete --grm-cutoff 0.05 --make-grm-bin --out data/${PROJECT}/output/grms/unrelated
 # running diff on the complete.grm.id and unrelated.grm.id files gives us 
 # the 5 ommitted samples
 
@@ -77,7 +89,7 @@ gcta64 --grm grms/complete --grm-cutoff 0.05 --make-grm-bin --out grms/unrelated
 # Br2173
 
 # We write them to a file to use in GREML
-printf '0 CMC_MSSM_307\n0 CMC_PITT_077\n0 Br1977\n0 Br1876\n0 Br2173' > removed_samples.txt
+printf '0 CMC_MSSM_307\n0 CMC_PITT_077\n0 Br1977\n0 Br1876\n0 Br2173' > data/${PROJECT}/input/removed_samples.txt
 ```
 
 # Run GREML
@@ -85,14 +97,14 @@ First, we need to generate a phenotype file.
 ```{r, eval=FALSE}
 # 1 Mbase window
 window_size = 1e6
-bed_file = read.table(pipe('zcat sPsychENCODE-gene.BED.gz | sed -e 1s/.//'), 
+bed_file = read.table(pipe(paste('zcat data/', PROJECT, '/input/sPsychENCODE-gene.BED.gz | sed -e 1s/.//', sep='')), 
                       header = TRUE, sep='\t')
 bed_file[, 'Chr'] = sapply(X = bed_file[, 'Chr'], FUN = function(chr_str) {
                            return(gsub('[^0-9]', '', chr_str))
                       })
 bed_file[bed_file[, 'Chr'] == '', 'Chr'] = '0'
 fam_id = rep(x = 0, times=dim(bed_file)[2] - 6)
-sample_id = scan(text = readLines('sPsychENCODE-gene.BED.gz', 1), what = "", 
+sample_id = scan(text = readLines(paste('data/', PROJECT, '/input/sPsychENCODE-gene.BED.gz', sep=''), 1), what = "", 
                  quiet = TRUE)[-(1:6)]
 phenotype_id = bed_file[,'pid']
 phenotypes = bed_file[,7:dim(bed_file)[2]]
@@ -107,10 +119,10 @@ window_end = bed_file[, 'end'] + window_size
 
 phenotype_info = cbind(phenotype_id, bed_file[,c('Chr', 'start', 'end')], window_start, window_end)
 
-write.table(phenotype_info, 'phenotype_ids', col.names=FALSE, row.names=FALSE, quote=FALSE)
+write.table(phenotype_info, paste('data/', PROJECT, '/input/phenotype_ids', sep=''), col.names=FALSE, row.names=FALSE, quote=FALSE)
 
 pheno_file = cbind(fam_id, sample_id, phenotypes)
-write.table(pheno_file, 'phenotype', sep='\t', col.names=FALSE, row.names=FALSE, 
+write.table(pheno_file, paste('data/', PROJECT, '/input/phenotype', sep=''), sep='\t', col.names=FALSE, row.names=FALSE, 
             quote=FALSE)
 ```
 
@@ -123,48 +135,9 @@ write.table(pheno_file, 'phenotype', sep='\t', col.names=FALSE, row.names=FALSE,
 4. Run GREML  
 Script is written in run\_all.sh
 
-## Script for specifically ENSG00000227232
-```{bash, eval=FALSE}
-# Step 1
-
-# grm_ranges/ENSG00000227232.txt
-# Chr Start End ID
-# 1 0 1029806 R1
-
-# grm_chrs/ENSG00000227232.txt
-# grms/ENSG00000227232_trans_int
-# grms/ped_file2
-# ...
-# grms/ped_file22
-
-plink --bfile ped_file --extract range grm_ranges/ENSG00000227232.txt --remove removed_samples.txt --make-bed --out fin_peds/ENSG00000227232_cis
-plink --bfile ped_file --exclude range grm_ranges/ENSG00000227232.txt --remove removed_samples.txt --make-bed --out fin_peds/ENSG00000227232_trans
-
-# Step 2
-gcta64 --make-grm-bin --bfile fin_peds/ENSG00000227232_cis --make-grm-alg 0 --out grms/ENSG00000227232_cis # 47 SNPs
-gcta64 --make-grm-bin --bfile fin_peds/ENSG00000227232_trans --make-grm-alg 0 --chr 1 --out grms/ENSG00000227232_trans_int
-gcta64 --make-grm-bin --mgrm grm_chrs/ENSG00000227232.txt --out grms/ENSG00000227232_trans # 5312461 SNPs
-
-# Step 3
-# mgrms/ENSG00000227232.txt
-# grms/ENSG00000227232_cis
-# grms/ENSG00000227232_trans
-
-# Step 4
-gcta64 --reml --reml-alg 0 --reml-maxit 100 --mpheno 1 --mgrm mgrms/ENSG00000227232.txt --pheno phenotype --out hsqs/ENSG00000227232 || \
-gcta64 --reml --reml-alg 2 --reml-maxit 10000 --mpheno 1 --mgrm mgrms/ENSG00000227232.txt --pheno phenotype --out hsqs/ENSG00000227232
-
-# Step 5 (Optional cleanup)
-rm grm_ranges/ENSG00000227232.txt
-rm fin_peds/ENSG00000227232_*
-rm grms/ENSG00000227232_*
-rm mgrms/ENSG00000227232.txt
-```
-# Processing HSQ files after generating them all
-
-## Combine the HSQ files and return statistics
+# Combine the HSQ files and return statistics
 ```{r, eval=FALSE}
-temp = unlist(list.files(path="./hsqs", pattern="*.hsq"))
+temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
 hsqs = t(sapply(X=temp, function(file_name) {
                   hsq = read.table(paste('hsqs/', file_name, sep=''), header=TRUE, nrows=4)
                   # Gene ID, Cis, Trans, Cis+Trans, Residual, Phenotype
@@ -177,7 +150,7 @@ rownames(hsqs) = hsqs[,"ID"]
 hsqs = as.data.frame(hsqs)
 hsqs = transform(hsqs, Cis=as.numeric(Cis), Trans=as.numeric(Trans), 
                  SNP=as.numeric(SNP), Res=as.numeric(Res), Phe=as.numeric(Phe))
-write.table(hsqs, 'all_variance.txt', quote=FALSE, row.names=FALSE, col.names=TRUE)
+write.table(hsqs, paste("data/", PROJECT, "/output/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
 
 cis_prop = sum(hsqs[, "Cis"])/sum(hsqs[, "SNP"]) # 0.3395873
 trans_prop = sum(hsqs[, "Trans"])/sum(hsqs[, "SNP"]) # 0.6604127
