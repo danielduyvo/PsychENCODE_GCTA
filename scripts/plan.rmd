@@ -2,15 +2,15 @@
 ```{bash, engine.opts='-l', eval=FALSE}
 PROJECT="1MBase"
 THREADS=2
-mkdir -p $PROJECT/output/fin_peds
-mkdir -p $PROJECT/output/graphs
-mkdir -p $PROJECT/output/grm_chrs
-mkdir -p $PROJECT/output/grm_ranges
-mkdir -p $PROJECT/output/grms
-mkdir -p $PROJECT/output/hsqs
-mkdir -p $PROJECT/output/mgrms
-mkdir -p $PROJECT/output/results
-mkdir -p $PROJECT/input/
+mkdir -p data/$PROJECT/output/fin_peds
+mkdir -p data/$PROJECT/output/graphs
+mkdir -p data/$PROJECT/output/grm_chrs
+mkdir -p data/$PROJECT/output/grm_ranges
+mkdir -p data/$PROJECT/output/grms
+mkdir -p data/$PROJECT/output/hsqs
+mkdir -p data/$PROJECT/output/mgrms
+mkdir -p data/$PROJECT/output/results
+mkdir -p data/$PROJECT/input/
 ```
 
 ```{r, eval=FALSE}

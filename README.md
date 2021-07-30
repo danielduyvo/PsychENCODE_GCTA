@@ -47,7 +47,7 @@ GCTA
 |  |
 |  +--plan.rmd
 |  |
-|  \--run_all.sh
+|  \--run_*.sh for running GREML
 |
 \--README.md
 ```
