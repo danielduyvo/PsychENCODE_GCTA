@@ -12,7 +12,7 @@
 #$ -m a
 #$ -M danieldu
 #$ -t 1-25774
-PROJECT="1MBase"
+PROJECT="1Mbase"
 THREADS=2
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
@@ -39,10 +39,10 @@ echo $LINE | \
                 data/${PROJECT}/output/mgrms/$ID.txt
 
             # Split the cis and trans regions into separate PED files
-            plink --bfile ped_file --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
+            plink --bfile data/${PROJECT}/input/ped_file --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
                 --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
                 --out data/${PROJECT}/output/fin_peds/${ID}_cis
-            plink --bfile ped_file --exclude range data/${PROJECT}/output/grm_ranges/$ID.txt \
+            plink --bfile data/${PROJECT}/input/ped_file --exclude range data/${PROJECT}/output/grm_ranges/$ID.txt \
                 --chr $CHR --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
                 --out data/${PROJECT}/output/fin_peds/${ID}_trans_int
 
