@@ -1,6 +1,6 @@
 # Set variables and set up environment
 ```{bash, engine.opts='-l', eval=FALSE}
-PROJECT="1MBase"
+PROJECT="1Mbase"
 THREADS=2
 mkdir -p data/$PROJECT/output/fin_peds
 mkdir -p data/$PROJECT/output/graphs
@@ -14,13 +14,19 @@ mkdir -p data/$PROJECT/input/
 ```
 
 ```{r, eval=FALSE}
-PROJECT="1MBase"
+PROJECT="1Mbase"
 ```
 
 # Prepare and subset VCF and BED files
 Use the code from trans-eQTL analysis, which subset the data into European frontal 
 cortex samples and regressed out covariates
 
+# Remove nonpolymorphic variants
+```{bash, engine.opts='-l', eval=FALSE}
+bcftools view -e 'COUNT(GT="AA")=N_SAMPLES || COUNT(GT="RR")=N_SAMPLES' \
+    data/$PROJECT/input/nonpoly_subset.vcf.gz -o data/$PROJECT/input/subset.vcf && \
+gzip data/$PROJECT/input/subset.vcf
+```
 # Convert VCF to PED
 ```{bash, engine.opts='-l', eval=FALSE}
 # Set family ID all to 0
@@ -32,11 +38,18 @@ We split the GRM by chromosome, and then combine it to generate a complete GRM.
 ```{bash, engine.opts='-l', eval=FALSE}
 > data/${PROJECT}/output/grm_chrs/all_chrs.txt
 for ((i=1;i<=22;i++)); do
-    gcta64 --make-grm-bin --bfile data/${PROJECT}/input/ped_file --make-grm-alg 0 --chr $i --out data/${PROJECT}/output/grms/ped_file$i --thread-num ${THREADS}
-    printf "data/%s/output/grms/ped_file%s" $PROJECT $i >> data/${PROJECT}/output/grm_chrs/all_chrs.txt
+    gcta64 --make-grm-bin --bfile data/${PROJECT}/input/ped_file --make-grm-alg 0 --chr $i --out data/${PROJECT}/output/grms/ped_file$i --thread-num ${THREADS} && \
+    printf "data/%s/output/grms/ped_file%s\n" $PROJECT $i >> data/${PROJECT}/output/grm_chrs/all_chrs.txt
 done
 
 gcta64 --mgrm data/${PROJECT}/output/grm_chrs/all_chrs.txt --make-grm-bin --out data/${PROJECT}/output/grms/complete
+```
+
+# Generate Big K GRM
+We modify the complete GRM by setting unrelated pairs to 0, < 0.05 as the threshold.  
+```{bash, engine.opts='-l', eval=FALSE}
+gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.05 \
+    --out data/${PROJECT}/output/grms/bigk
 ```
 
 # Generate histogram and report how many pairs have a relatedness > 0.025, > 0.05.
@@ -139,7 +152,7 @@ Script is written in run\_all.sh
 ```{r, eval=FALSE}
 temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
 hsqs = t(sapply(X=temp, function(file_name) {
-                  hsq = read.table(paste('hsqs/', file_name, sep=''), header=TRUE, nrows=4)
+                  hsq = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=4)
                   # Gene ID, Cis, Trans, Cis+Trans, Residual, Phenotype
                   line = c(substring(file_name, 1, nchar(file_name) - 4), 
                            hsq[1,2], hsq[2,2], hsq[1,2] + hsq[2,2], hsq[3,2], hsq[4,2])
@@ -150,11 +163,29 @@ rownames(hsqs) = hsqs[,"ID"]
 hsqs = as.data.frame(hsqs)
 hsqs = transform(hsqs, Cis=as.numeric(Cis), Trans=as.numeric(Trans), 
                  SNP=as.numeric(SNP), Res=as.numeric(Res), Phe=as.numeric(Phe))
-write.table(hsqs, paste("data/", PROJECT, "/output/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
+write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
 
 cis_prop = sum(hsqs[, "Cis"])/sum(hsqs[, "SNP"]) # 0.3395873
 trans_prop = sum(hsqs[, "Trans"])/sum(hsqs[, "SNP"]) # 0.6604127
 avg_snp_h2 = mean(apply(X=hsqs, MARGIN=1, function(row) as.numeric(row[4])/as.numeric(row[6]))) # 0.1087606
+```
+# Combine the HSQ files and return statistics, slightly different for working with all SNPs
+```{r, eval=FALSE}
+temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
+hsqs = t(sapply(X=temp, function(file_name) {
+                  hsq = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=3)
+                  # Gene ID, SNP, Residual, Phenotype
+                  line = c(substring(file_name, 1, nchar(file_name) - 4), 
+                           hsq[1,2], hsq[2,2], hsq[3,2])
+                  return(line)
+            }))
+colnames(hsqs) = c("ID", "SNP", "Res", "Phe")
+rownames(hsqs) = hsqs[,"ID"]
+hsqs = as.data.frame(hsqs)
+hsqs = transform(hsqs, SNP=as.numeric(SNP), Res=as.numeric(Res), Phe=as.numeric(Phe))
+write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
+
+avg_snp_h2 = mean(apply(X=hsqs, MARGIN=1, function(row) as.numeric(row[2])/as.numeric(row[4]))) # 0.06808974
 ```
 
 # Notes
@@ -163,4 +194,29 @@ The above paper treats cis-eQTLs as those where the SNP and effect are on the sa
 chromosome, and trans if not:  
 "cis-eQTL were defined to be those associations where the SNP was located on the same 
 chromosome as the gene, and trans-eQTL the complement of this."
+
+AFR: 75 pairs > 0.05
+322 pairs > 0.025
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+0.05006 0.05679 0.06271 0.10121 0.07700 0.94868
+cis 0.2001722
+trans 0.7998278
+avg snp h2 0.3041369
+
+[Using Extended Genealogy to Estimate Components of Heritability for 23 Quantitative and Dichotomous Traits](https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1003520)  
+Paper on estimating narrow-sense heritability
+
+[Narrow-sense heritability estimation of complex traits using identity-by-descent information](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6221881/)  
+A friendly explanation of narrow-sense heritability estimation  
+
+## Todo
+column for standard error  
+
+Unrelated  
+V(nxn) = GRM_cis sigma^2_cis + GRM_trans sigma^2_trans + I(nxn) sigma^2_epsilon  
+V(nxn) = GRM sigma^2 + I(nxn) sigma^2_epsilon  
+
+Related  
+V(nxn) = GRM(>0.025) sigma^2_1 + GRM sigma^2_2 + I(nxn) sigma^2_epsilon  
+Try to partition  
 
