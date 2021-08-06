@@ -1,6 +1,6 @@
 # Set variables and set up environment
 ```{bash, engine.opts='-l', eval=FALSE}
-PROJECT="1Mbase"
+PROJECT="AFR_SPC_HRC_1Mbase"
 THREADS=2
 mkdir -p data/$PROJECT/output/fin_peds
 mkdir -p data/$PROJECT/output/graphs
@@ -14,7 +14,7 @@ mkdir -p data/$PROJECT/input/
 ```
 
 ```{r, eval=FALSE}
-PROJECT="1Mbase"
+PROJECT="AFR_SPC_HRC_1Mbase"
 ```
 
 # Prepare and subset VCF and BED files
@@ -148,179 +148,8 @@ write.table(pheno_file, paste('data/', PROJECT, '/input/phenotype', sep=''), sep
 4. Run GREML  
 Script is written in run\_all.sh
 
-# Combine the HSQ files and return statistics, using a cis and trans window
-
-## Grabbing data from HSQs produced by genes with SNPs in the cis window
-```{r, eval=FALSE}
-temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
-hsqs = t(sapply(X=temp, function(file_name) {
-                    hsq = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=7, fill=TRUE)
-                    hsq[7,] = c("V(G)/Vp", hsq[8,1], hsq[8,2])
-                    hsq = hsq[-8,]
-                    hsq_log = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=FALSE, skip=9, fill=TRUE)
-                    # Gene ID,
-                    # Variance from Cis, Variance from Trans, Residual Variance, 
-                    # Phenotypic Variance, 
-                    # cish2, transh2, SNPh2
-                    # SE(Variance from Cis), SE(Variance from Trans), SE(Residual Variance),
-                    # SE(Phenotypic Variance),
-                    # SE(cish2), SE(transh2), SE(SNPh2)
-                    # P-value
-                    line = c(substring(file_name, 1, nchar(file_name) - 4), 
-                             hsq[1,2], hsq[2,2], hsq[3,2], hsq[4,2], 
-                             hsq[5,2], hsq[6,2], hsq[7,2],
-                             hsq[1,3], hsq[2,3], hsq[3,3], hsq[4,3],
-                             hsq[5,3], hsq[6,3], hsq[7,3],
-                             hsq_log[5,2]
-                    )
-                    return(line)
-}))
-colnames(hsqs) = c("ID", "V_Cis", "V_Trans", "V_Res", "V_Phe",
-                   "cish2", "transh2", "SNPh2",
-                   "SE_V_Cis", "SE_V_Trans", "SE_V_Res", "SE_V_Phe",
-                   "SE_cish2", "SE_transh2", "SE_SNPh2",
-                   "P_val"
-)
-rownames(hsqs) = hsqs[,"ID"]
-hsqs = as.data.frame(hsqs)
-for (i in 2:16) {
-    hsqs[,i] = as.numeric(hsqs[,i])
-}
-write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-
-cis_prop = sum(hsqs[, "V_Cis"])/sum(hsqs[, "V_Cis"] + hsqs[, "V_Trans"]) # 0.3395873
-trans_prop = sum(hsqs[, "V_Trans"])/sum(hsqs[, "V_Cis"] + hsqs[, "V_Trans"]) # 0.6604127
-avg_snp_h2 = mean(hsqs[, "SNPh2"]) # 0.1087606
-```
-
-## Listing genes missing SNPs in the cis window
-```{bash, eval=FALSE}
-for file in $(ls data/${PROJECT}/output/hsqs | grep log | sed 's/\.log/.hsq/g'); do
-    if [[ ! -e data/${PROJECT}/output/hsqs/$file ]]; then
-        printf '%s\n' $file >> data/${PROJECT}/output/results/missing.txt
-    fi
-done
-```
-
-## Process HSQs from genes missing SNPs in the cis windows
-```{r, eval=FALSE}
-WHOLE="whole"
-temp = read.table(paste("data/", PROJECT, "/output/results/missing.txt", sep=""), header=FALSE)$V1
-hsqs = t(sapply(X=temp, function(file_name) {
-                  hsq = read.table(paste('data/', WHOLE, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=4, fill=TRUE)
-                  hsq_log = read.table(paste('data/', WHOLE, '/output/hsqs/', file_name, sep=''), header=FALSE, skip=5, fill=TRUE)
-                  # Gene ID,
-                  # Variance from Cis, Variance from Trans, Residual Variance, 
-                  # Phenotypic Variance, 
-                  # cish2, transh2, SNPh2
-                  # SE(Variance from Cis), SE(Variance from Trans), SE(Residual Variance),
-                  # SE(Phenotypic Variance),
-                  # SE(cish2), SE(transh2), SE(SNPh2)
-                  # P-value
-                  line = c(substring(file_name, 1, nchar(file_name) - 4), 
-                           0, hsq[1,2], hsq[2,2], hsq[3,2], 
-                           0, hsq[4,2], hsq[4,2],
-                           0, hsq[1,3], hsq[2,3], hsq[3,3], 
-                           0, hsq[4,3], hsq[4,3],
-                           hsq_log[5,2]
-                  )
-                  return(line)
-            }))
-colnames(hsqs) = c("ID", "V_Cis", "V_Trans", "V_Res", "V_Phe",
-                   "cish2", "transh2", "SNPh2",
-                   "SE_V_Cis", "SE_V_Trans", "SE_V_Res", "SE_V_Phe",
-                   "SE_cish2", "SE_transh2", "SE_SNPh2",
-                   "P_val"
-)
-rownames(hsqs) = hsqs[,"ID"]
-hsqs = as.data.frame(hsqs)
-for (i in 2:16) {
-    hsqs[,i] = as.numeric(hsqs[,i])
-}
-write.table(hsqs, paste("data/", PROJECT, "/output/results/no_cis_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-```
-
-## Combine HSQs from both sets to generate statistics for the whole dataset
-```{r, eval=FALSE}
-hsqs = read.table(paste('data/', PROJECT, '/output/results/all_variance.txt', sep=''), header=TRUE)
-no_cis_hsqs = read.table(paste('data/', PROJECT, '/output/results/no_cis_variance.txt', sep=''), header=TRUE)
-all_hsqs = rbind(hsqs, no_cis_hsqs)
-
-cis_prop = sum(all_hsqs[, "V_Cis"])/sum(all_hsqs[, "V_Cis"] + all_hsqs[, "V_Trans"]) # 0.3395873
-trans_prop = sum(all_hsqs[, "V_Trans"])/sum(all_hsqs[, "V_Cis"] + all_hsqs[, "V_Trans"]) # 0.6604127
-avg_snp_h2 = mean(all_hsqs[, "SNPh2"]) # 0.1087606
-```
-
-# Combine the HSQ files and return statistics, slightly different for working with all SNPs
-```{r, eval=FALSE}
-temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
-hsqs = t(sapply(X=temp, function(file_name) {
-                  hsq = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=4, fill=TRUE)
-                  hsq_log = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=FALSE, skip=5, fill=TRUE)
-                  # Gene ID, 
-                  # Variance from SNP, Residual Variance, Phenotypic Variance, SNPh2,
-                  # SE(Variance from SNP), SE(Residual Variance), SE(Phenotypic Variance), SE(SNPh2)
-                  # P-value
-                  line = c(substring(file_name, 1, nchar(file_name) - 4), 
-                           hsq[1,2], hsq[2,2], hsq[3,2], hsq[4,2],
-                           hsq[1,3], hsq[2,3], hsq[3,3], hsq[4,3],
-                           hsq_log[5,2]
-                  )
-                  return(line)
-            }))
-colnames(hsqs) = c("ID", "V_SNP", "V_Res", "V_Phe", "SNPh2",
-                   "SE_V_SNP", "SE_V_Res", "SE_V_Phe", "SE_SNPh2",
-                   "P_val"
-)
-rownames(hsqs) = hsqs[,"ID"]
-hsqs = as.data.frame(hsqs)
-for (i in 2:10) {
-    hsqs[,i] = as.numeric(hsqs[,i])
-}
-write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-
-avg_snp_h2 = mean(hsqs[, "SNPh2"]) # 0.06808974
-```
-
-# Combine the HSQ files and return statistics, slightly different for Big K Small K
-```{r, eval=FALSE}
-temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
-hsqs = t(sapply(X=temp, function(file_name) {
-                  hsq = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=TRUE, nrows=7, fill=TRUE)
-                  hsq[7,] = c("V(G)/Vp", hsq[8,1], hsq[8,2])
-                  hsq = hsq[-8,]
-                  hsq_log = read.table(paste('data/', PROJECT, '/output/hsqs/', file_name, sep=''), header=FALSE, skip=9, fill=TRUE)
-                  # Gene ID,
-                  # Variance from bK GRM, Variance from SNP, Residual Variance, 
-                  # Phenotypic Variance, 
-                  # narrowh2 - SNPh2, SNPh2, narrowh2
-                  # SE(Variance from bK GRM), SE(Variance from SNP), SE(Residual Variance),
-                  # SE(Phenotypic Variance),
-                  # SE(narrowh2 - SNPh2), SE(SNPh2), SE(narrowh2),
-                  # P_val
-                  line = c(substring(file_name, 1, nchar(file_name) - 4), 
-                           hsq[1,2], hsq[2,2], hsq[3,2], hsq[4,2], 
-                           hsq[5,2], hsq[6,2], hsq[7,2],
-                           hsq[1,3], hsq[2,3], hsq[3,3], hsq[4,3],
-                           hsq[5,3], hsq[6,3], hsq[7,3],
-                           hsq_log[5,2]
-                  )
-                  return(line)
-            }))
-colnames(hsqs) = c("ID", "V_bK", "V_SNP", "Res", "Phe", "bKh2", "SNPh2", "narrowh2",
-                   "SE_V_bk", "SE_V_SNP", "SE_Res", "SE_Phe", "SE_bKh2", "SE_SNPh2", "SE_narrowh2",
-                   "P_val"
-)
-rownames(hsqs) = hsqs[,"ID"]
-hsqs = as.data.frame(hsqs)
-for (i in 2:16) {
-    hsqs[,i] = as.numeric(hsqs[,i])
-}
-write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-
-avg_snp_h2 = mean(hsqs$SNPh2)
-narrow_sense_h2 = mean(hsqs$narrowh2)
-```
+# Combine the HSQ files and return statistics
+Scripts for compiling data from HSQ files are in scripts/hsq_\*
 
 # Notes
 [The Genetic Architecture of Gene Expression in Peripheral Blood](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5294670/)  
@@ -329,25 +158,53 @@ chromosome, and trans if not:
 "cis-eQTL were defined to be those associations where the SNP was located on the same 
 chromosome as the gene, and trans-eQTL the complement of this."
 
+EUR: 5 pairs > 0.05
+1Mbase window
+cis 0.3375173
+trans 0.6624827
+avg snp h2 0.1085098
+5345/24905 significant heritable SNPs
+
+chromosome window
+cis 0.3980837
+trans 0.6019163
+avg snp h2 0.1285103
+2028/24905 significant heritable SNPs
+
+whole genome
+avg snp h2 0.06809028
+770/24905 significant heritable SNPs
+
+from bKsK
+avg snp h2 0.06298553
+narrow sense h2 0.1926015
+434/24905 significant heritable SNPs
+
 AFR: 75 pairs > 0.05
 322 pairs > 0.025
+0.05 pairs statistics:
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
 0.05006 0.05679 0.06271 0.10121 0.07700 0.94868
+1Mbase window
 cis 0.2001722
 trans 0.7998278
 avg snp h2 0.3041369
+3717/24905 significant heritable SNPs
 
 chromosome window
 cis 0.3348791
 trans 0.6651209
 avg snp h2 0.3427922
+1495/24905 significant heritable SNPs
 
 whole genome
-avg snp h2 
+avg snp h2 0.2510293
+1770/24905 significant heritable SNPs
 
 from bKsK
 avg snp h2 0.1160139
 narrow sense h2 0.403915
+345/24905 significant heritable SNPs
 
 [Using Extended Genealogy to Estimate Components of Heritability for 23 Quantitative and Dichotomous Traits](https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1003520)  
 Paper on estimating narrow-sense heritability
@@ -356,7 +213,8 @@ Paper on estimating narrow-sense heritability
 A friendly explanation of narrow-sense heritability estimation  
 
 ## Todo
-column for missing cis   
+Find index cis-eQTLs and find optimal HCP factors
+Split the HSQ processing scripts into their own files
 
 Unrelated  
 V(nxn) = GRM_cis sigma^2_cis + GRM_trans sigma^2_trans + I(nxn) sigma^2_epsilon  
