@@ -2,17 +2,19 @@
 
 # qsub options
 #$ -w e
-#$ -N GCTA_analysis_cis
+#$ -N EUR_250kbase_GCTA_analysis_cis
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o cis.log
-#$ -e cis.err
+#$ -o EUR_250kbase_cis.log
+#$ -e EUR_250kbase_cis.err
 #$ -m a
 #$ -M danieldu
 #$ -t 1-25774
-PROJECT="EUR_SPC_HRC_cis"
+PROJECT="EUR_SPC_HRC_cis_250kbase"
+# WINDOW=1000000 # 1Mbase
+WINDOW=250000 # 250kbase
 THREADS=2
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
@@ -22,6 +24,14 @@ echo $LINE | \
 
         # Check if the chromosome is a sex chromosome
         if [[ $CHR -gt 0 ]]; then
+
+            # Now uses bash variable to decide window
+            W_START=$(( ${START} - ${WINDOW} ))
+            W_END=$(( ${END} + ${WINDOW} ))
+
+            if [[ ${W_START} -lt 0 ]]; then
+                W_START=0
+            fi
 
             # Create the range file for PLINK to generate the cis region
             printf "%s %s %s R1" $CHR $W_START $W_END > data/${PROJECT}/output/grm_ranges/$ID.txt

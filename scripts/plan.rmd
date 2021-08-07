@@ -1,6 +1,10 @@
 # Set variables and set up environment
 ```{bash, engine.opts='-l', eval=FALSE}
-PROJECT="AFR_SPC_HRC_1Mbase"
+POP="EUR"
+PHENO="SPC"
+GENO="HRC"
+MODEL="1Mbase"
+PROJECT="${POP}_${PHENO}_${GENO}_${MODEL}"
 THREADS=2
 mkdir -p data/$PROJECT/output/fin_peds
 mkdir -p data/$PROJECT/output/graphs
@@ -11,6 +15,15 @@ mkdir -p data/$PROJECT/output/hsqs
 mkdir -p data/$PROJECT/output/mgrms
 mkdir -p data/$PROJECT/output/results
 mkdir -p data/$PROJECT/input/
+
+pushd data/$PROJECT/input/
+ln -s ../../../fin_genotype/${POP}_${GENO}/* ./
+ln -s ../../../fin_RNA_seq/${POP}_${PHENO}/* ./
+popd
+
+pushd data/$PROJECT/output/grms
+ln -s ../../../../grms/${POP}_${GENO}/* ./
+popd
 ```
 
 ```{r, eval=FALSE}
@@ -46,9 +59,9 @@ gcta64 --mgrm data/${PROJECT}/output/grm_chrs/all_chrs.txt --make-grm-bin --out 
 ```
 
 # Generate Big K GRM
-We modify the complete GRM by setting unrelated pairs to 0, < 0.05 as the threshold.  
+We modify the complete GRM by setting unrelated pairs to 0, < 0.025 as the threshold.  
 ```{bash, engine.opts='-l', eval=FALSE}
-gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.05 \
+gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.025 \
     --out data/${PROJECT}/output/grms/bigk
 ```
 
@@ -206,11 +219,30 @@ avg snp h2 0.1160139
 narrow sense h2 0.403915
 345/24905 significant heritable SNPs
 
+[The Genetic Architecture of Gene Expression in Peripheral Blood](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5294670/)  
+That Lloyd-Jones paper  
+
 [Using Extended Genealogy to Estimate Components of Heritability for 23 Quantitative and Dichotomous Traits](https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1003520)  
 Paper on estimating narrow-sense heritability
 
-[Narrow-sense heritability estimation of complex traits using identity-by-descent information](HTTPS://www.ncbi.nlm.nih.gov/pmc/articles/PMC6221881/)  
+[Narrow-sense heritability estimation of complex traits using identity-by-descent information](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6221881/)  
 A friendly explanation of narrow-sense heritability estimation  
+
+[Neale Lab Blog Post on heritability](http://www.nealelab.is/blog/2017/9/13/heritability-101-what-is-heritability)  
+Helpful blog post on the basics of heritability, with links to their more indepth 
+posts about how their lab estimated heritability  
+
+[Genome-wide eQTLs and heritability for gene expression traits in unrelated individuals](https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-15-13)
+Another paper on estimating cis and trans contribution to heritability
+
+[A characterization of cis- and trans-heritability of RNA-Seq-based gene expression](https://www.nature.com/articles/s41431-019-0511-5#Sec20)  
+Another paper on estimating cis and trans contribution to heritability
+
+[Heritability and Tissue Specificity of Expression Quantitative Trait Loci](https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.0020172)  
+Tangentially related paper, examining heritability in the context of cis and trans eQTLs  
+
+[The influence of genetic variation on gene expression](https://genome.cshlp.org/content/17/12/1707.full.html)  
+An overview paper about the topic  
 
 ## Todo
 Find index cis-eQTLs and find optimal HCP factors

@@ -20,7 +20,7 @@
 #     --out data/${PROJECT}/output/grms/complete
 # A modified complete GRM with all unrelated individuals set to 0 at data/${PROJECT}/output/grms/bigk
 # Can be generated with the following line using the file data/${PROJECT}/output/grms/complete
-# gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.05 \
+# gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.025 \
 #     --out data/${PROJECT}/output/grms/bigk
 
 PROJECT="bksk"
