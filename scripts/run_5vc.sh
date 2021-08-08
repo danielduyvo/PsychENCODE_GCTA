@@ -72,20 +72,18 @@ echo $LINE | \
 
             # Generate the GRMs for the cis and trans regions, split between big K small K
             gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_cis \
-                --make-bK 0.025 --make-grm-alg 0 \
-                --out data/${PROJECT}/output/grms/${ID}_cis_bigk
-            gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_trans_int \
-                --make-bK 0.025 --make-grm-alg 0 --chr $CHR \
-                --out data/${PROJECT}/output/grms/${ID}_trans_int_bigk
-            gcta64 --make-grm-bin --thread-num $THREADS --mgrm data/${PROJECT}/output/grm_chrs/$ID.txt \
-                --make-bk 0.025 --out data/${PROJECT}/output/grms/${ID}_trans_bigk
-            gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_cis \
                 --make-grm-alg 0 --out data/${PROJECT}/output/grms/${ID}_cis
             gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_trans_int \
                 --make-grm-alg 0 --chr $CHR \
                 --out data/${PROJECT}/output/grms/${ID}_trans_int
             gcta64 --make-grm-bin --thread-num $THREADS --mgrm data/${PROJECT}/output/grm_chrs/$ID.txt \
                 --out data/${PROJECT}/output/grms/${ID}_trans
+
+
+            gcta64 --grm data/${PROJECT}/output/grms/${ID}_cis --thread-num $THREADS \
+                --make-bK 0.025 --out data/${PROJECT}/output/grms/${ID}_cis_bigk
+            gcta64 --grm data/${PROJECT}/output/grms/${ID}_trans --thread-num $THREADS \
+                --make-bK 0.025 --out data/${PROJECT}/output/grms/${ID}_trans_bigk
 
             # Run GREML, defaulting to EM if AI fails
             gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} \
