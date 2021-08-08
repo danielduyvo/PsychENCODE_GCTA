@@ -12,7 +12,6 @@
 #$ -m a
 #$ -M danieldu
 #$ -t 1-25774
-SGE_TASK_ID=1000
 PROJECT="AFR_SPC_HRC_250kbase"
 # WINDOW=1000000 # 1Mbase
 WINDOW=250000 # 250kbase
