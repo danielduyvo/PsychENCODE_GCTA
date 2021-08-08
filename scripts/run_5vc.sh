@@ -90,8 +90,17 @@ echo $LINE | \
                 --pheno data/${PROJECT}/input/phenotype \
                 --out data/${PROJECT}/output/hsqs/$ID
 
+            # Add number of cis SNPs to HSQ output
+            plink --bfile data/${PROJECT}/input/ped_file \
+                --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
+                --remove data/${PROJECT}/input/removed_samples.txt --write-snplist \
+                --out data/${PROJECT}/output/grm_ranges/$ID
+            wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
+            printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
+                >> data/${PROJECT}/output/hsqs/$ID.hsq
+
             # Clean up files
-            rm data/${PROJECT}/output/grm_ranges/$ID.txt
+            rm data/${PROJECT}/output/grm_ranges/$ID.*
             rm data/${PROJECT}/output/grm_chrs/$ID.txt
             rm data/${PROJECT}/output/mgrms/$ID.txt
             rm data/${PROJECT}/output/fin_peds/${ID}_*
