@@ -26,9 +26,8 @@
 PROJECT="EUR_SPC_HRC_bksk"
 THREADS=2
 
-SGE_TASK_ID=$((SGE_TASK_ID-1))
-IDS=("ENSG00000249502" "ENSG00000249504" "ENSG00000249509")
-SGE_TASK_ID=$(awk "/${IDS[$SGE_TASK_ID]}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
+GENE_ID=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/output/results/missing.txt)
+SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \

@@ -16,10 +16,9 @@
 # This script splits the cis and trans region by chromosome instead
 PROJECT="EUR_SPC_HRC_chrs"
 THREADS=2
-set -x
-SGE_TASK_ID=$((SGE_TASK_ID-1))
-IDS=("ENSG00000008128" "ENSG00000089693" "ENSG00000089723" "ENSG00000089737" "ENSG00000089775" "ENSG00000089902" "ENSG00000117151" "ENSG00000177225" "ENSG00000177234" "ENSG00000184178" "ENSG00000254131" "ENSG00000254141")
-SGE_TASK_ID=$(awk "/${IDS[$SGE_TASK_ID]}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
+
+GENE_ID=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/output/results/missing.txt)
+SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
