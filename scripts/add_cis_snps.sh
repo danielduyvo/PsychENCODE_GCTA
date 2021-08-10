@@ -37,13 +37,16 @@ echo $LINE | \
             printf "%s %s %s R1" $CHR $W_START $W_END > data/${PROJECT}/output/grm_ranges/$ID.txt
 
             # Add number of cis SNPs to HSQ output
-            plink --bfile data/${PROJECT}/input/ped_file \
+            if plink --bfile data/${PROJECT}/input/ped_file \
                 --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
                 --remove data/${PROJECT}/input/removed_samples.txt --write-snplist \
-                --out data/${PROJECT}/output/grm_ranges/$ID
-            wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
-            printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
-                >> data/${PROJECT}/output/hsqs/$ID.hsq
+                --out data/${PROJECT}/output/grm_ranges/$ID; then
+
+                wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
+                printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
+                    >> data/${PROJECT}/output/hsqs/$ID.hsq
+
+            fi
 
             # Clean up files
             rm data/${PROJECT}/output/grm_ranges/$ID.*
