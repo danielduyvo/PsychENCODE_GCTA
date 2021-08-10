@@ -56,40 +56,41 @@ echo $LINE | \
                 data/${PROJECT}/output/mgrms/$ID.txt
 
             # Split the cis and trans regions into separate PED files
-            plink --bfile data/${PROJECT}/input/ped_file --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
+            # If no cis SNPs, exit
+            if plink --bfile data/${PROJECT}/input/ped_file --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
                 --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
-                --out data/${PROJECT}/output/fin_peds/${ID}_cis
-            plink --bfile data/${PROJECT}/input/ped_file --exclude range data/${PROJECT}/output/grm_ranges/$ID.txt \
-                --chr $CHR --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
-                --out data/${PROJECT}/output/fin_peds/${ID}_trans_int
+                --out data/${PROJECT}/output/fin_peds/${ID}_cis; then
+                plink --bfile data/${PROJECT}/input/ped_file --exclude range data/${PROJECT}/output/grm_ranges/$ID.txt \
+                    --chr $CHR --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
+                    --out data/${PROJECT}/output/fin_peds/${ID}_trans_int
 
-            # Generate the GRMs for the cis and trans regions
-            gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_cis --make-grm-alg 0 \
-                --out data/${PROJECT}/output/grms/${ID}_cis
-            gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR \
-                --out data/${PROJECT}/output/grms/${ID}_trans_int
-            gcta64 --make-grm-bin --thread-num $THREADS --mgrm data/${PROJECT}/output/grm_chrs/$ID.txt \
-                --out data/${PROJECT}/output/grms/${ID}_trans
+                # Generate the GRMs for the cis and trans regions
+                gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_cis --make-grm-alg 0 \
+                    --out data/${PROJECT}/output/grms/${ID}_cis
+                gcta64 --make-grm-bin --thread-num $THREADS --bfile data/${PROJECT}/output/fin_peds/${ID}_trans_int --make-grm-alg 0 --chr $CHR \
+                    --out data/${PROJECT}/output/grms/${ID}_trans_int
+                gcta64 --make-grm-bin --thread-num $THREADS --mgrm data/${PROJECT}/output/grm_chrs/$ID.txt \
+                    --out data/${PROJECT}/output/grms/${ID}_trans
 
-            # Run GREML, defaulting to EM if AI fails
-            gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 100 --mpheno ${SGE_TASK_ID} \
-                --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
-                --pheno data/${PROJECT}/input/phenotype \
-                --out data/${PROJECT}/output/hsqs/$ID || \
-            gcta64 --reml --thread-num $THREADS --reml-alg 2 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} \
-                --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
-                --pheno data/${PROJECT}/input/phenotype \
-                --out data/${PROJECT}/output/hsqs/$ID
+                # Run GREML, defaulting to EM if AI fails
+                gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 100 --mpheno ${SGE_TASK_ID} \
+                    --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
+                    --pheno data/${PROJECT}/input/phenotype \
+                    --out data/${PROJECT}/output/hsqs/$ID || \
+                gcta64 --reml --thread-num $THREADS --reml-alg 2 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} \
+                    --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
+                    --pheno data/${PROJECT}/input/phenotype \
+                    --out data/${PROJECT}/output/hsqs/$ID
 
-            # Add number of cis SNPs to HSQ output
-            plink --bfile data/${PROJECT}/input/ped_file \
-                --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
-                --remove data/${PROJECT}/input/removed_samples.txt --write-snplist \
-                --out data/${PROJECT}/output/grm_ranges/$ID
-            wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
-            printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
-                >> data/${PROJECT}/output/hsqs/$ID.hsq
-
+                # Add number of cis SNPs to HSQ output
+                plink --bfile data/${PROJECT}/input/ped_file \
+                    --extract range data/${PROJECT}/output/grm_ranges/$ID.txt \
+                    --remove data/${PROJECT}/input/removed_samples.txt --write-snplist \
+                    --out data/${PROJECT}/output/grm_ranges/$ID
+                wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
+                printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
+                    >> data/${PROJECT}/output/hsqs/$ID.hsq
+            fi
             # Clean up files
             rm data/${PROJECT}/output/grm_ranges/$ID.*
             rm data/${PROJECT}/output/grm_chrs/$ID.txt
