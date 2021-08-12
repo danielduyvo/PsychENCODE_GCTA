@@ -27,9 +27,9 @@ hsqs = t(sapply(X=temp, function(file_name) {
                     return(line)
 }))
 colnames(hsqs) = c("ID", "V_Cis", "V_Trans", "V_Res", "V_Phe",
-                   "cish2", "transh2", "SNPh2",
+                   "Cis_h2", "Trans_h2", "SNP_h2",
                    "SE_V_Cis", "SE_V_Trans", "SE_V_Res", "SE_V_Phe",
-                   "SE_cish2", "SE_transh2", "SE_SNPh2",
+                   "SE_Cis_h2", "SE_Trans_h2", "SE_SNP_h2",
                    "P_val"
 )
 rownames(hsqs) = hsqs[,"ID"]
@@ -38,10 +38,6 @@ for (i in 2:16) {
     hsqs[,i] = as.numeric(hsqs[,i])
 }
 write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-
-cis_prop = sum(hsqs[, "V_Cis"])/sum(hsqs[, "V_Cis"] + hsqs[, "V_Trans"]) # 0.3395873
-trans_prop = sum(hsqs[, "V_Trans"])/sum(hsqs[, "V_Cis"] + hsqs[, "V_Trans"]) # 0.6604127
-avg_snp_h2 = mean(hsqs[, "SNPh2"]) # 0.1087606
 
 system(paste("export PROJECT=", PROJECT, "; ./scripts/missing_hsq_1Mbase_helper.sh", sep=""))
 
@@ -68,9 +64,9 @@ hsqs = t(sapply(X=temp, function(file_name) {
                   return(line)
             }))
 colnames(hsqs) = c("ID", "V_Cis", "V_Trans", "V_Res", "V_Phe",
-                   "cish2", "transh2", "SNPh2",
+                   "Cis_h2", "Trans_h2", "SNP_h2",
                    "SE_V_Cis", "SE_V_Trans", "SE_V_Res", "SE_V_Phe",
-                   "SE_cish2", "SE_transh2", "SE_SNPh2",
+                   "SE_Cis_h2", "SE_Trans_h2", "SE_SNP_h2",
                    "P_val"
 )
 rownames(hsqs) = hsqs[,"ID"]
@@ -84,8 +80,3 @@ write.table(hsqs, paste("data/", PROJECT, "/output/results/no_cis_variance.txt",
 hsqs = read.table(paste('data/', PROJECT, '/output/results/all_variance.txt', sep=''), header=TRUE)
 no_cis_hsqs = read.table(paste('data/', PROJECT, '/output/results/no_cis_variance.txt', sep=''), header=TRUE)
 all_hsqs = rbind(hsqs, no_cis_hsqs)
-
-cis_prop = sum(all_hsqs[, "V_Cis"])/sum(all_hsqs[, "V_Cis"] + all_hsqs[, "V_Trans"])
-trans_prop = sum(all_hsqs[, "V_Trans"])/sum(all_hsqs[, "V_Cis"] + all_hsqs[, "V_Trans"])
-avg_snp_h2 = mean(all_hsqs[, "SNPh2"])
-

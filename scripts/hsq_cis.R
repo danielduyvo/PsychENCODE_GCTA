@@ -18,8 +18,8 @@ hsqs = t(sapply(X=temp, function(file_name) {
                   )
                   return(line)
             }))
-colnames(hsqs) = c("ID", "V_Cis", "V_Res", "V_Phe", "Cish2",
-                   "SE_V_Cis", "SE_V_Res", "SE_V_Phe", "SE_Cish2",
+colnames(hsqs) = c("ID", "V_Cis", "V_Res", "V_Phe", "Cis_h2",
+                   "SE_V_Cis", "SE_V_Res", "SE_V_Phe", "SE_Cis_h2",
                    "P_val"
 )
 rownames(hsqs) = hsqs[,"ID"]
@@ -28,5 +28,3 @@ for (i in 2:10) {
     hsqs[,i] = as.numeric(hsqs[,i])
 }
 write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
-
-avg_snp_h2 = mean(hsqs[, "Cish2"]) # 0.06808974
