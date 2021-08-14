@@ -193,6 +193,14 @@ avg snp h2 0.06298553
 narrow sense h2 0.1926015
 434/24905 significant heritable SNPs
 
+from 5VC
+cis in narrow-sense 0.2268588
+trans in narrow-sense 0.7731412
+cis in SNP 0.3751415
+trans in narrow-sense 0.6248585
+avg snp h2 0.0885202
+narrow sense h2 0.1995696
+
 AFR: 75 pairs > 0.05
 322 pairs > 0.025
 0.05 pairs statistics:

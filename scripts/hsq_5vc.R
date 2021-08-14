@@ -23,6 +23,7 @@ hsqs = t(sapply(X=temp, function(file_name) {
                     # SE(transh2), SE(trans SNP h2),
                     # SE(narrow sense h2)
                     # P-value
+                    # cis-SNPs
                     line = c(substring(file_name, 1, nchar(file_name) - 4), 
                              hsq[1,2], hsq[2,2], 
                              hsq[3,2], hsq[4,2], 
@@ -36,7 +37,8 @@ hsqs = t(sapply(X=temp, function(file_name) {
                              hsq[7,3], hsq[8,3],
                              hsq[9,3], hsq[10,3],
                              hsq[11,3],
-                             hsq_log[5,2]
+                             hsq_log[5,2],
+                             hsq_log[7,2]
                     )
                     return(line)
 }))
@@ -44,8 +46,8 @@ colnames(hsqs) = c("ID",
                    "V_Cis_bK", "V_Cis_SNP", 
                    "V_Trans_bK", "V_Trans_SNP", 
                    "V_Res", "V_Phe",
-                   "Cis_bk_h2", "Cis_SNP_h2",
-                   "Trans_bk_h2", "Trans_SNP_h2",
+                   "Cis_bK_h2", "Cis_SNP_h2",
+                   "Trans_bK_h2", "Trans_SNP_h2",
                    "Narrow_h2",
                    "SE_V_Cis_bK", "SE_V_Cis_SNP",
                    "SE_V_Trans_bK", "SE_V_Trans_SNP", 
@@ -53,7 +55,8 @@ colnames(hsqs) = c("ID",
                    "SE_Cis_bK_h2", "SE_Cis_SNP_h2",
                    "SE_Trans_bK_h2", "SE_Trans_SNP_h2",
                    "SE_Narrow_h2",
-                   "P_val"
+                   "P_val",
+                   "Cis_SNPs"
 )
 rownames(hsqs) = hsqs[,"ID"]
 hsqs = as.data.frame(hsqs)
@@ -99,7 +102,8 @@ hsqs = t(sapply(X=temp, function(file_name) {
                              0, 0,
                              hsq[5,3], hsq[6,3],
                              hsq[7,3],
-                             hsq_log[5,2]
+                             hsq_log[5,2],
+                             0
                     )
                     return(line)
             }))
@@ -107,8 +111,8 @@ colnames(hsqs) = c("ID",
                    "V_Cis_bK", "V_Cis_SNP", 
                    "V_Trans_bK", "V_Trans_SNP", 
                    "V_Res", "V_Phe",
-                   "Cis_bk_h2", "Cis_SNP_h2",
-                   "Trans_bk_h2", "Trans_SNP_h2",
+                   "Cis_bK_h2", "Cis_SNP_h2",
+                   "Trans_bK_h2", "Trans_SNP_h2",
                    "Narrow_h2",
                    "SE_V_Cis_bK", "SE_V_Cis_SNP",
                    "SE_V_Trans_bK", "SE_V_Trans_SNP", 
@@ -116,7 +120,8 @@ colnames(hsqs) = c("ID",
                    "SE_Cis_bK_h2", "SE_Cis_SNP_h2",
                    "SE_Trans_bK_h2", "SE_Trans_SNP_h2",
                    "SE_Narrow_h2",
-                   "P_val"
+                   "P_val",
+                   "Cis_SNPs"
 )
 rownames(hsqs) = hsqs[,"ID"]
 hsqs = as.data.frame(hsqs)

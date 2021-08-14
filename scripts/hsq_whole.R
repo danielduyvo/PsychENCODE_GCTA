@@ -18,8 +18,8 @@ hsqs = t(sapply(X=temp, function(file_name) {
                   )
                   return(line)
             }))
-colnames(hsqs) = c("ID", "V_SNP", "V_Res", "V_Phe", "SNPh2",
-                   "SE_V_SNP", "SE_V_Res", "SE_V_Phe", "SE_SNPh2",
+colnames(hsqs) = c("ID", "V_SNP", "V_Res", "V_Phe", "SNP_h2",
+                   "SE_V_SNP", "SE_V_Res", "SE_V_Phe", "SE_SNP_h2",
                    "P_val"
 )
 rownames(hsqs) = hsqs[,"ID"]
