@@ -2,21 +2,28 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_250kbase_GCTA_analysis_window
+#$ -N EUR_SPC_gene_HRC_250kbase_window
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_250kbase_window.log
-#$ -e EUR_250kbase_window.err
+#$ -o EUR_SPC_gene_HRC_250kbase_window.log
+#$ -e EUR_SPC_gene_HRC_250kbase_window.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-322
-PROJECT="EUR_SPC_HRC_250kbase"
+#$ -t 1-24905
+
+# #$ -t 1-24905
+# #$ -t 1-75000
+# #$ -t 75001-93293
+# 24905 genes
+# 93293 isoforms
+
+PROJECT="EUR_SPC_gene_HRC_250kbase_window"
 # WINDOW=1000000 # 1Mbase
 WINDOW=250000 # 250kbase
 THREADS=2
-REDO=0
+REDO=1
 
 if [[ $REDO -eq 0 ]]; then
     GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
@@ -26,7 +33,7 @@ fi
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
     (
-    read ID CHR START END W_START W_END
+    read ID CHR START END EXTRA
     printf "ID: %s\tCHR: %s\n" $ID $CHR
 
         # Check if the chromosome is a sex chromosome
