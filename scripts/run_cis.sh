@@ -19,7 +19,7 @@ THREADS=2
 REDO=1
 
 if [[ $REDO -eq 0 ]]; then
-    GENE_ID=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/output/results/missing.txt)
+    GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
     SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 fi
 

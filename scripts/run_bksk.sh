@@ -11,7 +11,7 @@
 #$ -e bksk.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-25774
+#$ -t 1-3
 
 # Requires two additional GRMs:
 # A complete GRM to be generated at data/${PROJECT}/output/grms/complete
@@ -23,8 +23,16 @@
 # gcta64 --grm data/${PROJECT}/output/grms/complete --thread-num $THREADS --make-bK 0.025 \
 #     --out data/${PROJECT}/output/grms/bigk
 
-PROJECT="bksk"
+PROJECT="EUR_SPC_HRC_bksk_0.025"
 THREADS=2
+
+REDO=0
+
+if [[ $REDO -eq 0 ]]; then
+    GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
+    SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
+fi
+
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
     (

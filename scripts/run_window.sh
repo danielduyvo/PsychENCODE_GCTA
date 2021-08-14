@@ -2,24 +2,24 @@
 
 # qsub options
 #$ -w e
-#$ -N AFR_250kbase_GCTA_analysis_window
+#$ -N EUR_250kbase_GCTA_analysis_window
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o AFR_250kbase_window.log
-#$ -e AFR_250kbase_window.err
+#$ -o EUR_250kbase_window.log
+#$ -e EUR_250kbase_window.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-25774
-PROJECT="AFR_SPC_HRC_250kbase"
+#$ -t 1-322
+PROJECT="EUR_SPC_HRC_250kbase"
 # WINDOW=1000000 # 1Mbase
 WINDOW=250000 # 250kbase
 THREADS=2
-REDO=1
+REDO=0
 
 if [[ $REDO -eq 0 ]]; then
-    GENE_ID=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/output/results/missing.txt)
+    GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
     SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 fi
 

@@ -2,25 +2,25 @@
 
 # qsub options
 #$ -w e
-#$ -N AFR_SPC_HRC_bksk_1Mbase
+#$ -N AFR_SPC_HRC_bksk_250kbase
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o AFR_SPC_HRC_bksk_1Mbase.log
-#$ -e AFR_SPC_HRC_bksk_1Mbase.err
+#$ -o AFR_SPC_HRC_bksk_250kbase.log
+#$ -e AFR_SPC_HRC_bksk_250kbase.err
 #$ -m a
 #$ -M danieldu
 #$ -t 1-25774
 
-PROJECT="AFR_SPC_HRC_bksk_1Mbase"
-WINDOW=1000000 # 1Mbase
-# WINDOW=250000 # 250kbase
+PROJECT="AFR_SPC_HRC_bksk_250kbase"
+# WINDOW=1000000 # 1Mbase
+WINDOW=250000 # 250kbase
 THREADS=2
 REDO=1
 
 if [[ $REDO -eq 0 ]]; then
-    GENE_ID=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/output/results/missing.txt)
+    GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
     SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 fi
 
