@@ -76,10 +76,12 @@ echo $LINE | \
                 gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 100 --mpheno ${SGE_TASK_ID} \
                     --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
                     --pheno data/${PROJECT}/input/phenotype \
+                    --reml-lrt 1 2 \
                     --out data/${PROJECT}/output/hsqs/$ID || \
                 gcta64 --reml --thread-num $THREADS --reml-alg 2 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} \
                     --mgrm data/${PROJECT}/output/mgrms/$ID.txt \
                     --pheno data/${PROJECT}/input/phenotype \
+                    --reml-lrt 1 2 \
                     --out data/${PROJECT}/output/hsqs/$ID
 
                 # Add number of cis SNPs to HSQ output
