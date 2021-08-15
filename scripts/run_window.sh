@@ -99,13 +99,15 @@ echo $LINE | \
                 wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist
                 printf "cisSNPs\t%s" $(wc -l < data/${PROJECT}/output/grm_ranges/${ID}.snplist) \
                     >> data/${PROJECT}/output/hsqs/$ID.hsq
+
+                # Clean up files
+                rm data/${PROJECT}/output/grms/${ID}_*
             fi
             # Clean up files
             rm data/${PROJECT}/output/grm_ranges/$ID.*
             rm data/${PROJECT}/output/grm_chrs/$ID.txt
             rm data/${PROJECT}/output/mgrms/$ID.txt
             rm data/${PROJECT}/output/fin_peds/${ID}_*
-            rm data/${PROJECT}/output/grms/${ID}_*
 
         fi
     )
