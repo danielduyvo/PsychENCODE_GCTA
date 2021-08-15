@@ -138,18 +138,14 @@ phenotypes = t(as.matrix(phenotypes))
 colnames(phenotypes) = phenotype_id
 rownames(phenotypes) = sample_id
 
-window_start = bed_file[, 'start'] - window_size
-window_start[window_start < 0] = 0
+phenotype_info = cbind(phenotype_id, bed_file[,c('Chr', 'start', 'end')])
 
-window_end = bed_file[, 'end'] + window_size
-
-phenotype_info = cbind(phenotype_id, bed_file[,c('Chr', 'start', 'end')], window_start, window_end)
-
-write.table(phenotype_info, paste('data/', PROJECT, '/input/phenotype_ids', sep=''), col.names=FALSE, row.names=FALSE, quote=FALSE)
+write.table(phenotype_info, paste('data/', PROJECT, '/input/phenotype_ids', sep=''), 
+            col.names=FALSE, row.names=FALSE, quote=FALSE)
 
 pheno_file = cbind(fam_id, sample_id, phenotypes)
-write.table(pheno_file, paste('data/', PROJECT, '/input/phenotype', sep=''), sep='\t', col.names=FALSE, row.names=FALSE, 
-            quote=FALSE)
+write.table(pheno_file, paste('data/', PROJECT, '/input/phenotype', sep=''), 
+            sep='\t', col.names=FALSE, row.names=FALSE, quote=FALSE)
 ```
 
 # Automating for all SNPs
