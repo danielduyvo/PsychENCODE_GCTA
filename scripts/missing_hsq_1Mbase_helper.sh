@@ -2,8 +2,8 @@
 
 # Listing genes missing SNPs in the cis window
 > data/${PROJECT}/output/results/missing.txt
-for file in $(ls data/${PROJECT}/output/hsqs | grep log | sed 's/\.log/.hsq/g'); do
-    if [[ ! -e data/${PROJECT}/output/hsqs/$file ]]; then
+for file in $(awk '{print $1}' data/${PROJECT}/input/phenotype_ids); do
+    if [[ ! -e data/${PROJECT}/output/hsqs/${file}.hsq ]]; then
         printf '%s\n' $file >> data/${PROJECT}/output/results/missing.txt
     fi
 done
