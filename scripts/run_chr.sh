@@ -2,20 +2,26 @@
 
 # qsub options
 #$ -w e
-#$ -N GCTA_analysis_chromosome
+#$ -N EUR_SPC_isoform_HRC_chr_window
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o chr.log
-#$ -e chr.err
+#$ -o EUR_SPC_isoform_HRC_chr_window.log
+#$ -e EUR_SPC_isoform_HRC_chr_window.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-25774
+#$ -t 75001-93293
+
+# #$ -t 1-24905
+# #$ -t 1-75000
+# #$ -t 75001-93293
+# 24905 genes
+# 93293 isoforms
 
 # This script splits the cis and trans region by chromosome instead
 
-PROJECT="chrs"
+PROJECT="EUR_SPC_isoform_HRC_chr_window"
 THREADS=2
 REDO=1
 
@@ -27,7 +33,7 @@ fi
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
     (
-    read ID CHR START END W_START W_END
+    read ID CHR START END EXTRA
     printf "ID: %s\tCHR: %s\n" $ID $CHR
 
         # Check if the chromosome is a sex chromosome

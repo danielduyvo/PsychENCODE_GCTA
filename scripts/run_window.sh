@@ -2,16 +2,16 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_SPC_gene_HRC_250kbase_window
+#$ -N EUR_SPC_isoform_HRC_1Mbase_window
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_SPC_gene_HRC_250kbase_window.log
-#$ -e EUR_SPC_gene_HRC_250kbase_window.err
+#$ -o EUR_SPC_isoform_HRC_1Mbase_window.log
+#$ -e EUR_SPC_isoform_HRC_1Mbase_window.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-24905
+#$ -t 1-75000
 
 # #$ -t 1-24905
 # #$ -t 1-75000
@@ -19,9 +19,9 @@
 # 24905 genes
 # 93293 isoforms
 
-PROJECT="EUR_SPC_gene_HRC_250kbase_window"
-# WINDOW=1000000 # 1Mbase
-WINDOW=250000 # 250kbase
+PROJECT="EUR_SPC_isoform_HRC_1Mbase_window"
+WINDOW=1000000 # 1Mbase
+# WINDOW=250000 # 250kbase
 THREADS=2
 REDO=1
 

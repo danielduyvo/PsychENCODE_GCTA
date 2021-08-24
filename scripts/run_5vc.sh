@@ -27,7 +27,7 @@ fi
 LINE=$(sed -n ${SGE_TASK_ID}p data/${PROJECT}/input/phenotype_ids)
 echo $LINE | \
     (
-    read ID CHR START END W_START W_END
+    read ID CHR START END EXTRA
     printf "ID: %s\tCHR: %s\n" $ID $CHR
 
         # Check if the chromosome is a sex chromosome
