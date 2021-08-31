@@ -11,8 +11,9 @@
 # 93293 isoforms
 
 REDO=false
+DELETE=false
 
-while getopts a:n:t:r opt; do
+while getopts a:n:t:rdh opt; do
     case $opt in
         a)
             ANALYSIS=$OPTARG
@@ -25,6 +26,20 @@ while getopts a:n:t:r opt; do
             ;;
         r)
             REDO=true
+            ;;
+        d)
+            DELETE=true
+            ;;
+        h)
+            echo 24905 genes
+            echo 93293 isoforms
+            echo -a for analysis type:
+            echo 23vc, 5vc, bksk, chr, cis, whole, window
+            echo "-n for project name"
+            echo -t for job array string
+            echo -r to redo
+            echo -d to delete generated script file
+            exit 0
             ;;
         \?)
             echo "Invalid option: -$OPTARG" 1>&2
@@ -44,8 +59,9 @@ echo Redo: $REDO
 
 case $ANALYSIS in
     23vc)
-        qsub <(sed "s/ARG_NAME/$NAME; s/ARG_ARRAY/$ARRAY_STRING; s/ARG_REDO/$REDO" \
-            scripts/run_23vc.sh)
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_23vc.sh > qsub_script.sh
+        qsub qsub_script.sh
         ;;
     5vc)
         ;;
@@ -61,3 +77,6 @@ case $ANALYSIS in
         ;;
 esac
 
+if $DELETE; then
+    rm qsub_script.sh
+fi
