@@ -2,18 +2,18 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_SPC_isoform_HRC_bivariate_window
+#$ -N EUR_SPC_isoform_HRC_bivariate_cis
 #$ -l h_data=8G,h_rt=2:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_SPC_isoform_HRC_bivariate_window.log
-#$ -e EUR_SPC_isoform_HRC_bivariate_window.err
+#$ -o EUR_SPC_isoform_HRC_bivariate_cis.log
+#$ -e EUR_SPC_isoform_HRC_bivariate_cis.err
 #$ -m a
 #$ -M danieldu
 #$ -t 1-28
 
-PROJECT="EUR_SPC_isoform_HRC_bivariate_window"
+PROJECT="EUR_SPC_isoform_HRC_bivariate_cis"
 WINDOW=1000000 # 1Mbase
 
 GENE="ENSG00000128891"
@@ -65,62 +65,36 @@ echo $LINE | \
         W_START=0
     fi
 
-    # Create the range file for PLINK to generate the cis and trans regions
+    # Create the range file for PLINK to generate the cis region
     printf "%s %s %s R1" $CHR $W_START $W_END > \
         data/${PROJECT}/output/grm_ranges/${GENE}/$TNAME.txt
 
-    # Create file for GCTA pointing to which PED files belong to the trans region
-    printf "data/%s/output/grms/%s/%s_trans_int" $PROJECT $GENE $TNAME > \
-        data/${PROJECT}/output/grm_chrs/${GENE}/$TNAME.txt
-    for ((i=1;i<=22;i++)); do
-        if [[ $i -ne $CHR ]]; then
-            printf "\ndata/%s/output/grms/ped_file%s" $PROJECT $i >> \
-                data/${PROJECT}/output/grm_chrs/${GENE}/$TNAME.txt
-        fi
-    done
-
-    # Create file for GCTA pointing to which GRM files to compare (cis vs. trans)
-    printf "data/%s/output/grms/%s/%s_cis\ndata/%s/output/grms/%s/%s_trans" \
-        $PROJECT $GENE $TNAME $PROJECT $GENE $TNAME > \
-        data/${PROJECT}/output/mgrms/${GENE}/$TNAME.txt
-
-    # Split the cis and trans regions into separate PED files
+    # Split the cis region into separate PED file
     # If no cis SNPs, exit
     if plink --bfile data/${PROJECT}/input/ped_file \
         --extract range data/${PROJECT}/output/grm_ranges/${GENE}/$TNAME.txt \
         --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
         --out data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}_cis; then
-        plink --bfile data/${PROJECT}/input/ped_file \
-            --exclude range data/${PROJECT}/output/grm_ranges/${GENE}/$TNAME.txt \
-            --chr $CHR --remove data/${PROJECT}/input/removed_samples.txt --make-bed \
-            --out data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}_trans_int
 
-        # Generate the GRM for the cis and trans region
+        # Generate the GRM for the cis region
         gcta64 --make-grm-bin --thread-num $THREADS \
             --bfile data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}_cis \
             --make-grm-alg 0 \
             --out data/${PROJECT}/output/grms/${GENE}/${TNAME}_cis
-        gcta64 --make-grm-bin --thread-num $THREADS \
-            --bfile data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}_trans_int \
-            --make-grm-alg 0 --chr $CHR \
-            --out data/${PROJECT}/output/grms/${GENE}/${TNAME}_trans_int
-        gcta64 --make-grm-bin --thread-num $THREADS \
-            --mgrm data/${PROJECT}/output/grm_chrs/${GENE}/$TNAME.txt \
-            --out data/${PROJECT}/output/grms/${GENE}/${TNAME}_trans
 
-    # Run GREML, defaulting to EM if AI fails
-    gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 \
-        --reml-bivar-lrt-rg 0 \
-        --remove data/${PROJECT}/input/removed_samples.txt \
-        --mgrm data/${PROJECT}/output/mgrms/${GENE}/$TNAME.txt \
-        --pheno data/${PROJECT}/input/phenotype \
-        --out data/${PROJECT}/output/hsqs/${GENE}/${T1}_${T2} || \
-    gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 2 --reml-maxit 10000 \
-        --reml-bivar-lrt-rg 0 \
-        --remove data/${PROJECT}/input/removed_samples.txt \
-        --mgrm data/${PROJECT}/output/mgrms/${GENE}/$TNAME.txt \
-        --pheno data/${PROJECT}/input/phenotype \
-        --out data/${PROJECT}/output/hsqs/${GENE}/${T1}_${T2}
+        # Run GREML, defaulting to EM if AI fails
+        gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 \
+            --reml-bivar-lrt-rg 0 \
+            --remove data/${PROJECT}/input/removed_samples.txt \
+            --grm data/${PROJECT}/output/grms/${GENE}/${TNAME}_cis \
+            --pheno data/${PROJECT}/input/phenotype \
+            --out data/${PROJECT}/output/hsqs/${GENE}/${T1}_${T2} || \
+        gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 2 --reml-maxit 10000 \
+            --reml-bivar-lrt-rg 0 \
+            --remove data/${PROJECT}/input/removed_samples.txt \
+            --grm data/${PROJECT}/output/grms/${GENE}/${TNAME}_cis \
+            --pheno data/${PROJECT}/input/phenotype \
+            --out data/${PROJECT}/output/hsqs/${GENE}/${T1}_${T2}
 
         # Add number of cis SNPs to HSQ output
         plink --bfile data/${PROJECT}/input/ped_file \
@@ -133,12 +107,11 @@ echo $LINE | \
 
         # Clean up files
         rm -rf data/${PROJECT}/output/grms/${GENE}/${TNAME}*
+        rm -rf data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}*
     fi
 
     # Clean up files
     rm -rf data/${PROJECT}/output/grm_ranges/${GENE}/${TNAME}*
-    rm -rf data/${PROJECT}/output/grm_chrs/${GENE}/${TNAME}*
-    rm -rf data/${PROJECT}/output/mgrms/${GENE}/${TNAME}*
-    rm -rf data/${PROJECT}/output/fin_peds/${GENE}/${TNAME}*
     )
+
 
