@@ -2,30 +2,24 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_SPC_isoform_HRC_chr_window
+#$ -N ARG_NAME
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_SPC_isoform_HRC_chr_window.log
-#$ -e EUR_SPC_isoform_HRC_chr_window.err
+#$ -o ARG_NAME.log
+#$ -e ARG_NAME.err
 #$ -m a
 #$ -M danieldu
-#$ -t 75001-93293
-
-# #$ -t 1-24905
-# #$ -t 1-75000
-# #$ -t 75001-93293
-# 24905 genes
-# 93293 isoforms
+#$ -t ARG_ARRAY
 
 # This script splits the cis and trans region by chromosome instead
 
-PROJECT="EUR_SPC_isoform_HRC_chr_window"
+PROJECT="ARG_NAME"
 THREADS=2
-REDO=1
+REDO=ARG_REDO
 
-if [[ $REDO -eq 0 ]]; then
+if $REDO; then
     GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
     SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 fi

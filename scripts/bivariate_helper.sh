@@ -1,9 +1,9 @@
-!#/usr/bin/env bash
+#!/usr/bin/env bash
 
 POP="EUR"
 PHENO="SPC_isoform"
 GENO="HRC"
-MODEL="bivariate_whole"
+MODEL="bivariate_cis"
 PROJECT="${POP}_${PHENO}_${GENO}_${MODEL}"
 
 GENE="ENSG00000128891"

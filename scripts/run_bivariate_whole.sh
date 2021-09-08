@@ -11,15 +11,15 @@
 #$ -e EUR_SPC_isoform_HRC_bivariate.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-120
+#$ -t 1-28
 
 # Requires a complete GRM to be generated at data/${PROJECT}/output/grms/complete
 # Can be generated with the following line using the file data/${PROJECT}/output/grm_chrs/all_chrs.txt
 # gcta64 --make-grm-bin --thread-num $THREADS --mgrm data/${PROJECT}/output/grm_chrs/all_chrs.txt \
 #     --out data/${PROJECT}/output/grms/complete
 
-PROJECT="EUR_SPC_isoform_HRC_bivariate"
-GENE="ENSG00000078328"
+PROJECT="EUR_SPC_isoform_HRC_bivariate_whole"
+GENE="ENSG00000128891"
 TRANSCRIPTS=$(wc -l < data/${PROJECT}/input/${GENE}_ids)
 THREADS=2
 

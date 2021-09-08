@@ -13,7 +13,7 @@
 REDO=false
 DELETE=false
 
-while getopts a:n:t:rdh opt; do
+while getopts a:n:t:w:rdh opt; do
     case $opt in
         a)
             ANALYSIS=$OPTARG
@@ -38,8 +38,12 @@ while getopts a:n:t:rdh opt; do
             echo "-n for project name"
             echo -t for job array string
             echo -r to redo
+            echo -w to set window size
             echo -d to delete generated script file
             exit 0
+            ;;
+        w)
+            WINDOW=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG" 1>&2
@@ -52,10 +56,16 @@ while getopts a:n:t:rdh opt; do
     esac
 done
 
+if [[ -z "$ANALYSIS" || -z "$NAME" || -z "$ARRAY_STRING" ]]; then
+    echo "Missing required option" 1>&2
+    exit 1
+fi
+
 echo Analysis: $ANALYSIS
 echo Project Name: $NAME
 echo Job Array: $ARRAY_STRING
 echo Redo: $REDO
+
 
 case $ANALYSIS in
     23vc)
@@ -68,12 +78,36 @@ case $ANALYSIS in
     bksk)
         ;;
     chr)
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_chr.sh > qsub_script.sh
+        qsub qsub_script.sh
         ;;
     cis)
+        if [[ ! -z "$WINDOW" ]]; then
+            echo WINDOW: $WINDOW
+        else
+            echo "Window option required" 1>&2
+            exit 1
+        fi
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$WINDOW/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_cis.sh > qsub_script.sh
+        qsub qsub_script.sh
         ;;
     whole)
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_whole.sh > qsub_script.sh
+        qsub qsub_script.sh
         ;;
     window)
+        if [[ ! -z "$WINDOW" ]]; then
+            echo WINDOW: $WINDOW
+        else
+            echo "Window option required" 1>&2
+            exit 1
+        fi
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$WINDOW/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_window.sh > qsub_script.sh
+        qsub qsub_script.sh
         ;;
 esac
 

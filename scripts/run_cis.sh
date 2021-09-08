@@ -2,29 +2,23 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_SPC_gene_HRC_cis_1Mbase
+#$ -N ARG_NAME
 #$ -l h_data=8G,h_rt=1:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_SPC_gene_HRC_cis_1Mbase.log
-#$ -e EUR_SPC_gene_HRC_cis_1Mbase.err
+#$ -o ARG_NAME.log
+#$ -e ARG_NAME.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-24905
+#$ -t ARG_ARRAY
 
-# #$ -t 1-24905
-# #$ -t 1-75000
-# #$ -t 75001-93293
-# 24905 genes
-# 93293 isoforms
-PROJECT="EUR_SPC_gene_HRC_1Mbase_cis"
-WINDOW=1000000 # 1Mbase
-# WINDOW=250000 # 250kbase
+PROJECT="ARG_NAME"
+WINDOW=ARG_WINDOW
 THREADS=2
-REDO=1
+REDO=ARG_REDO
 
-if [[ $REDO -eq 0 ]]; then
+if $REDO; then
     GENE_ID=$(sed -n "${SGE_TASK_ID}s/\.hsq//gp" data/${PROJECT}/output/results/missing.txt)
     SGE_TASK_ID=$(awk "/${GENE_ID}/ {print NR}" data/${PROJECT}/input/phenotype_ids)
 fi
