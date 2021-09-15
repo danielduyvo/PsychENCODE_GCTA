@@ -12,8 +12,9 @@
 
 REDO=false
 DELETE=false
+MISSING=false
 
-while getopts a:n:t:w:rdh opt; do
+while getopts a:n:t:w:mrdh opt; do
     case $opt in
         a)
             ANALYSIS=$OPTARG
@@ -29,6 +30,9 @@ while getopts a:n:t:w:rdh opt; do
             ;;
         d)
             DELETE=true
+            ;;
+        m)
+            MISSING=true
             ;;
         h)
             echo 24905 genes
@@ -65,6 +69,12 @@ echo Analysis: $ANALYSIS
 echo Project Name: $NAME
 echo Job Array: $ARRAY_STRING
 echo Redo: $REDO
+echo List missing: $MISSING
+
+if $MISSING; then
+    export PROJECT
+    ./scripts/missing_hsq.sh
+fi
 
 
 case $ANALYSIS in

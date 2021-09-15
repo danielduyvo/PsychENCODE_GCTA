@@ -41,7 +41,7 @@ for (i in 2:16) {
 }
 write.table(hsqs, paste("data/", PROJECT, "/output/results/all_variance.txt", sep=""), quote=FALSE, row.names=FALSE, col.names=TRUE)
 
-system(paste("export PROJECT=", PROJECT, "; ./scripts/missing_hsq_1Mbase_helper.sh", sep=""))
+system(paste("export PROJECT=", PROJECT, "; ./scripts/missing_hsq.sh", sep=""))
 
 # Process HSQs from genes missing SNPs in the cis windows
 temp = read.table(paste("data/", PROJECT, "/output/results/missing.txt", sep=""), header=FALSE)$V1
