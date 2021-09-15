@@ -42,6 +42,7 @@ while getopts a:n:t:w:mrdh opt; do
             echo "-n for project name"
             echo -t for job array string
             echo -r to redo
+            echo -m to list missing analyses
             echo -w to set window size
             echo -d to delete generated script file
             exit 0
@@ -59,6 +60,10 @@ while getopts a:n:t:w:mrdh opt; do
             ;;
     esac
 done
+
+if $REDO; then
+    ARRAY_STRING=$(printf '1-%s' $(echo data/${NAME}/output/results/missing.txt | wc -l))
+fi
 
 if [[ -z "$ANALYSIS" || -z "$NAME" || -z "$ARRAY_STRING" ]]; then
     echo "Missing required option" 1>&2
