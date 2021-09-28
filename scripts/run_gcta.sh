@@ -61,8 +61,14 @@ while getopts a:n:t:w:mrdh opt; do
     esac
 done
 
+if $MISSING; then
+    echo Generating list of missing HSQs...
+    export PROJECT=$NAME
+    ./scripts/missing_hsq.sh
+fi
+
 if $REDO; then
-    ARRAY_STRING=$(printf '1-%s' $(echo data/${NAME}/output/results/missing.txt | wc -l))
+    ARRAY_STRING=$(printf '1-%s' $(cat data/${NAME}/output/results/missing.txt | wc -l))
 fi
 
 if [[ -z "$ANALYSIS" || -z "$NAME" || -z "$ARRAY_STRING" ]]; then
@@ -75,12 +81,6 @@ echo Project Name: $NAME
 echo Job Array: $ARRAY_STRING
 echo Redo: $REDO
 echo List missing: $MISSING
-
-if $MISSING; then
-    export PROJECT
-    ./scripts/missing_hsq.sh
-fi
-
 
 case $ANALYSIS in
     23vc)
@@ -99,7 +99,7 @@ case $ANALYSIS in
         ;;
     cis)
         if [[ ! -z "$WINDOW" ]]; then
-            echo WINDOW: $WINDOW
+            echo Window: $WINDOW
         else
             echo "Window option required" 1>&2
             exit 1
@@ -115,7 +115,7 @@ case $ANALYSIS in
         ;;
     window)
         if [[ ! -z "$WINDOW" ]]; then
-            echo WINDOW: $WINDOW
+            echo Window: $WINDOW
         else
             echo "Window option required" 1>&2
             exit 1
