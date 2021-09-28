@@ -38,7 +38,7 @@ while getopts a:n:t:w:mrdh opt; do
             echo 24905 genes
             echo 93293 isoforms
             echo -a for analysis type:
-            echo 23vc, 5vc, bksk, chr, cis, whole, window
+            echo 23vc, 5vc, bksk, chr, cis, whole, window, window_exc
             echo "-n for project name"
             echo -t for job array string
             echo -r to redo
@@ -122,6 +122,17 @@ case $ANALYSIS in
         fi
         sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$WINDOW/g; s/ARG_REDO/$REDO/g" \
             scripts/run_window.sh > qsub_script.sh
+        qsub qsub_script.sh
+        ;;
+    window_exc)
+        if [[ ! -z "$WINDOW" ]]; then
+            echo WINDOW: $WINDOW
+        else
+            echo "Window option required" 1>&2
+            exit 1
+        fi
+        sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$WINDOW/g; s/ARG_REDO/$REDO/g" \
+            scripts/run_window_cis_chr_excluded_from_trans.sh > qsub_script.sh
         qsub qsub_script.sh
         ;;
 esac
