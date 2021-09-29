@@ -16,6 +16,19 @@ MISSING=false
 
 while getopts a:n:t:w:mrdh opt; do
     case $opt in
+        h)
+            echo 24905 genes
+            echo 93293 isoforms
+            echo -a for analysis type:
+            echo 23vc, 5vc, bksk, chr, cis, whole, window, window_exc
+            echo "-n for project name"
+            echo -t for job array string
+            echo -r to redo
+            echo -m to list missing analyses
+            echo -w to set window size
+            echo -d to delete generated script file
+            exit 0
+            ;;
         a)
             ANALYSIS=$OPTARG
             ;;
@@ -33,19 +46,6 @@ while getopts a:n:t:w:mrdh opt; do
             ;;
         m)
             MISSING=true
-            ;;
-        h)
-            echo 24905 genes
-            echo 93293 isoforms
-            echo -a for analysis type:
-            echo 23vc, 5vc, bksk, chr, cis, whole, window, window_exc
-            echo "-n for project name"
-            echo -t for job array string
-            echo -r to redo
-            echo -m to list missing analyses
-            echo -w to set window size
-            echo -d to delete generated script file
-            exit 0
             ;;
         w)
             WINDOW=$OPTARG
