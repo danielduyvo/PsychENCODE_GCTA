@@ -1,9 +1,9 @@
 # Set variables and set up environment
 ```{bash, engine.opts='-l', eval=FALSE}
 POP="EUR"
-PHENO="SPC_gene"
+PHENO="SPC_isoform"
 GENO="HRC"
-MODEL="1Mbase_window"
+MODEL="bivariate_cis"
 PROJECT="${POP}_${PHENO}_${GENO}_${MODEL}"
 THREADS=2
 mkdir -p data/$PROJECT/output/fin_peds

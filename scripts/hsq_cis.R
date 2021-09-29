@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-PROJECT="EUR_SPC_HRC_cis_1Mbase"
+PROJECT="ARG_NAME"
 
 # Combine the HSQ files and return statistics
 temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))

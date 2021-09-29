@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-PROJECT="EUR_SPC_HRC_chrs"
+PROJECT="ARG_NAME"
 
 # Grabbing data from HSQs
 temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))

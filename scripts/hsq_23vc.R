@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-PROJECT="EUR_SPC_isoform_HRC_23vc"
+PROJECT="ARG_NAME"
 
 # Grabbing data from HSQs produced by genes with SNPs in the cis window
 temp = unlist(list.files(path=paste("data/", PROJECT, "/output/hsqs", sep=""), pattern="*.hsq"))
