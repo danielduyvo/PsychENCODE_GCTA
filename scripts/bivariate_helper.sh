@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 
-POP="EUR"
-PHENO="SPC_isoform"
-GENO="HRC"
-MODEL="bivariate_cis"
+POP="ARG_POP"
+PHENO="ARG_PHENO"
+GENO="ARG_GENO"
+MODEL="ARG_MODEL"
 PROJECT="${POP}_${PHENO}_${GENO}_${MODEL}"
 
-GENE="ENSG00000128891"
+GENE="ARG_GENE"
 
 awk -v GENE=$GENE '{if($0 ~ GENE) print NR " " $1}' \
     data/${PROJECT}/input/phenotype_ids > \
     data/${PROJECT}/input/${GENE}_ids
 
-mkdir -p data/${PROJECT}/output/${GENE}/fin_peds
-mkdir -p data/${PROJECT}/output/${GENE}/graphs
-mkdir -p data/${PROJECT}/output/${GENE}/grm_chrs
-mkdir -p data/${PROJECT}/output/${GENE}/grm_ranges
-mkdir -p data/${PROJECT}/output/${GENE}/grms
-mkdir -p data/${PROJECT}/output/${GENE}/hsqs
-mkdir -p data/${PROJECT}/output/${GENE}/mgrms
-mkdir -p data/${PROJECT}/output/${GENE}/results
+mkdir -p data/${PROJECT}/output/fin_peds/${GENE}/
+mkdir -p data/${PROJECT}/output/graphs/${GENE}/
+mkdir -p data/${PROJECT}/output/grm_chrs/${GENE}/
+mkdir -p data/${PROJECT}/output/grm_ranges/${GENE}/
+mkdir -p data/${PROJECT}/output/grms/${GENE}/
+mkdir -p data/${PROJECT}/output/hsqs/${GENE}/
+mkdir -p data/${PROJECT}/output/mgrms/${GENE}/
+mkdir -p data/${PROJECT}/output/results/${GENE}/
 
-pushd data/$PROJECT/output/${GENE}/grms
-ln -s ../../../../../grms/${POP}_${GENO}/* ./
+pushd data/$PROJECT/output/grms/${GENE}
+ln -s ../../../../grms/${POP}_${GENO}/* ./
 popd

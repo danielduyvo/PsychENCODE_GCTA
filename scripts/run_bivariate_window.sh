@@ -2,21 +2,21 @@
 
 # qsub options
 #$ -w e
-#$ -N EUR_SPC_isoform_HRC_bivariate_window
+#$ -N ARG_NAME
 #$ -l h_data=8G,h_rt=2:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
-#$ -o EUR_SPC_isoform_HRC_bivariate_window.log
-#$ -e EUR_SPC_isoform_HRC_bivariate_window.err
+#$ -o ARG_NAME.log
+#$ -e ARG_NAME.err
 #$ -m a
 #$ -M danieldu
-#$ -t 1-28
+#$ -t ARG_ARRAY
 
-PROJECT="EUR_SPC_isoform_HRC_bivariate_window"
-WINDOW=1000000 # 1Mbase
+PROJECT="ARG_NAME"
+WINDOW=ARG_WINDOW
 
-GENE="ENSG00000128891"
+GENE="ARG_GROUP"
 TRANSCRIPTS=$(wc -l < data/${PROJECT}/input/${GENE}_ids)
 THREADS=2
 
