@@ -8,7 +8,7 @@ PROJECT="${POP}_${PHENO}_${GENO}_${MODEL}"
 
 GENE="ARG_GENE"
 
-awk -v GENE=$GENE '{if($0 ~ GENE) print NR " " $1}' \
+awk -v GENE=$GENE '{GENE=GENE; if($5==GENE) print NR " " $1}' \
     data/${PROJECT}/input/phenotype_ids > \
     data/${PROJECT}/input/${GENE}_ids
 
@@ -21,6 +21,6 @@ mkdir -p data/${PROJECT}/output/hsqs/${GENE}/
 mkdir -p data/${PROJECT}/output/mgrms/${GENE}/
 mkdir -p data/${PROJECT}/output/results/${GENE}/
 
-pushd data/$PROJECT/output/grms/${GENE}
-ln -s ../../../../grms/${POP}_${GENO}/* ./
-popd
+pushd data/$PROJECT/output/grms/${GENE} > /dev/null
+ln -s ../../../../../grms/${POP}_${GENO}/* ./
+popd > /dev/null

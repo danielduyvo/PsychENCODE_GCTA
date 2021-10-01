@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 PROJECT="EUR_SPC_isoform_HRC_bivariate_whole"
-GENE="ENSG00000078328"
+GENE="ENSG00000128891"
 
 # Combine the HSQ files and return statistics
 temp = unlist(list.files(path=paste("data/", PROJECT, "/output/", GENE, "/hsqs", sep=""), pattern="*.hsq"))

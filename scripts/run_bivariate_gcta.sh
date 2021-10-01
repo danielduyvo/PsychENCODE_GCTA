@@ -20,13 +20,13 @@ while getopts a:t:w:mrdh opt; do
             echo 24905 genes
             echo 93293 isoforms
             echo -a for analysis type:
-            echo window
-            echo "-n for project name"
             echo -t for job array string
             echo -r to redo
             echo -m to list missing analyses
             echo -w to set window size
             echo -d to delete generated script file
+            echo positional parameters:
+            echo POPULATION PHENOTYPE GENOTYPE MODEL
             exit 0
             ;;
         a)
@@ -45,7 +45,7 @@ while getopts a:t:w:mrdh opt; do
             MISSING=true
             ;;
         w)
-            WINDOW=$OPTARG
+            window=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG" 1>&2
@@ -76,9 +76,13 @@ fi
 
 if $REDO; then
     ARRAY_STRING=$(printf '1-%s' $(cat data/${NAME}/output/results/missing.txt | wc -l))
+
+    echo Option not implemented 1>&2
+    exit 1 #TODO
 fi
 
-if [[ -z "$ANALYSIS" || -z "$NAME" || -z "$ARRAY_STRING" ]]; then
+if [[ -z "$ANALYSIS" || -z "$NAME" || -z "$ARRAY_STRING" || \
+    -z "$POP" || -z "$PHENO" || -z "$GENO" || -z "$MODEL" ]]; then
     echo "Missing required option" 1>&2
     exit 1
 fi
@@ -93,55 +97,59 @@ echo List missing: $MISSING
 case $ANALYSIS in
     window)
 
-        ## Read in number of phenotypes (isoforms)
+        ### Read in window size
+        if [[ ! -z "$window" ]]; then
+            echo Window: $window
+        else
+            echo "Window option required" 1>&2
+            exit 1
+        fi
+
+        ## Generate a list of unique groups (genes) of phenotypes (isoforms)
+        awk '{print $5}' data/${NAME}/input/phenotype_ids | sort | uniq > \
+            data/${NAME}/input/group_ids
+
+        ## Read in number of groups
         unset IFS
-        unset phenotype_range
-        unset phenotype_indexes
+        unset group_range
+        unset group_indexes
         if [[ -n $(echo $ARRAY_STRING | grep "," | grep "-") ]]; then
             echo "Can only have an array or range, not both" 1>&2
             # exit 1
         elif [[ -n $(echo $ARRAY_STRING | grep "-") ]]; then
             echo "Reading in a range"
             IFS='- '
-            read -a phenotype_range <<< $ARRAY_STRING
+            read -a group_range <<< $ARRAY_STRING
             unset IFS
-            echo `seq ${phenotype_range[0]} ${phenotype_range[1]}`
-            phenotype_indexes=(`seq ${phenotype_range[0]} ${phenotype_range[1]}`)
+            group_indexes=(`seq ${group_range[0]} ${group_range[1]}`)
         else
             echo "Reading in a list of indexes"
             IFS=', '
-            read -a phenotype_indexes <<< $ARRAY_STRING
+            read -a group_indexes <<< $ARRAY_STRING
             unset IFS
         fi
 
-        ## Generate a list of unique groups of phenotypes (genes)
-        awk '{print $5}' data/${NAME}/input/phenotype_ids | sort | uniq > \
-            data/${NAME}/input/group_ids
-
         ## Generate qsub script for each group
-        for i in phenotype_indexes; do
-
-            ### Read in project name, window size (shared across all jobs)
-            if [[ ! -z "$WINDOW" ]]; then
-                echo Window: $WINDOW
-            else
-                echo "Window option required" 1>&2
-                exit 1
-            fi
+        for i in "${group_indexes[@]}"; do
 
             ### Read in group name and create a list of phenotypes
             GROUP_NAME=$(sed -n ${i}p data/${NAME}/input/group_ids)
-            sed "s/ARG_POP/${POP}/g; s/ARG_PHENO/${PHENO}/g; s/ARG_GENO/${GENO}/g; s/ARG_MODEL/${MODEL}/g; s/ARG_GENE/${GROUP_NAME}" scripts/bivariate_helper.sh > generate_phenotype_group_list.sh
+            sed "s/ARG_POP/${POP}/g; s/ARG_PHENO/${PHENO}/g; s/ARG_GENO/${GENO}/g; s/ARG_MODEL/${MODEL}/g; s/ARG_GENE/${GROUP_NAME}/g" scripts/bivariate_helper.sh > generate_phenotype_group_list.sh
             chmod +x generate_phenotype_group_list.sh
             ./generate_phenotype_group_list.sh
 
             ### Read in number of phenotypes and convert to array string
             PHENOTYPE_SUM=$(cat data/${NAME}/input/${GROUP_NAME}_ids | wc -l)
             PHENOTYPE_COMBINATIONS=$(( ${PHENOTYPE_SUM} * ( ${PHENOTYPE_SUM} - 1 ) / 2 ))
-            ARRAY_STRING="1-${PHENOTYPE_COMBINATIONS}"
-            sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$WINDOW/g; s/ARG_GROUP/${GROUP_NAME}/g; s/ARG_REDO/$REDO/g" \ #TODO implement REDO
-                scripts/run_bivariate_window.sh > qsub_script.sh
-            qsub qsub_script.sh
+            if [[ $PHENOTYPE_COMBINATIONS -gt 0 ]]; then
+                ARRAY_STRING="1-${PHENOTYPE_COMBINATIONS}"
+                echo Group: $GROUP_NAME
+                echo Job array: $ARRAY_STRING
+                sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$window/g; s/ARG_GROUP/${GROUP_NAME}/g; s/ARG_REDO/$REDO/g" \
+                    scripts/run_bivariate_window.sh > qsub_script.sh
+                qsub qsub_script.sh
+            fi
+
         done
         ;;
 esac
@@ -150,5 +158,3 @@ if $DELETE; then
     rm qsub_script.sh
 fi
 
-
-### Run
