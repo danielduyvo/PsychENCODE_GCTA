@@ -2,6 +2,8 @@
 
 # Script for compiling GCTA results
 
+delete=false
+
 while getopts a:n:t:w:mrdh opt; do
     case $opt in
         h)
@@ -71,9 +73,9 @@ case $analysis in
         ;;
     window)
         if [[ ! -z "$whole" ]]; then
-            echo Window: $whole
+            echo Whole: $whole
         else
-            echo "Window option required" 1>&2
+            echo "Whole option required" 1>&2
             exit 1
         fi
         sed "s/ARG_NAME/$name/g; s/ARG_WHOLE/$whole/g" \
@@ -82,9 +84,9 @@ case $analysis in
         ;;
     window_exc)
         if [[ ! -z "$whole" ]]; then
-            echo Window: $whole
+            echo Whole: $whole
         else
-            echo "Window option required" 1>&2
+            echo "Whole option required" 1>&2
             exit 1
         fi
         sed "s/ARG_NAME/$name/g; s/ARG_WHOLE/$whole/g" \
@@ -93,7 +95,7 @@ case $analysis in
         ;;
 esac
 
-if $DELETE; then
+if $delete; then
     rm hsq_compile.R
 fi
 
