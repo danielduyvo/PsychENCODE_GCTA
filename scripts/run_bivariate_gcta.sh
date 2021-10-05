@@ -10,17 +10,19 @@
 # 24905 genes
 # 93293 isoforms
 
+build=false
 REDO=false
 DELETE=false
 MISSING=false
 
-while getopts a:t:w:mrdh opt; do
+while getopts a:bt:w:mrdh opt; do
     case $opt in
         h)
             echo 24905 genes
             echo 93293 isoforms
             echo -a for analysis type:
             echo -t for job array string
+            echo -b to build directory structure
             echo -r to redo
             echo -m to list missing analyses
             echo -w to set window size
@@ -31,6 +33,9 @@ while getopts a:t:w:mrdh opt; do
             ;;
         a)
             ANALYSIS=$OPTARG
+            ;;
+        b)
+            build=true
             ;;
         t)
             ARRAY_STRING=$OPTARG
@@ -129,14 +134,22 @@ case $ANALYSIS in
             unset IFS
         fi
 
+        # Output and logging
+        echo ${#group_indexes[@]} groups
+        printf "Group Number"> data/${NAME}/input/bivariate_groups.txt
+
         ## Generate qsub script for each group
         for i in "${group_indexes[@]}"; do
 
             ### Read in group name and create a list of phenotypes
             GROUP_NAME=$(sed -n ${i}p data/${NAME}/input/group_ids)
             sed "s/ARG_POP/${POP}/g; s/ARG_PHENO/${PHENO}/g; s/ARG_GENO/${GENO}/g; s/ARG_MODEL/${MODEL}/g; s/ARG_GENE/${GROUP_NAME}/g" scripts/bivariate_helper.sh > generate_phenotype_group_list.sh
-            chmod +x generate_phenotype_group_list.sh
-            ./generate_phenotype_group_list.sh
+
+            ### Build output directories
+            if $build; then
+                chmod +x generate_phenotype_group_list.sh
+                ./generate_phenotype_group_list.sh
+            fi
 
             ### Read in number of phenotypes and convert to array string
             PHENOTYPE_SUM=$(cat data/${NAME}/input/${GROUP_NAME}_ids | wc -l)
@@ -148,6 +161,9 @@ case $ANALYSIS in
                 sed "s/ARG_NAME/$NAME/g; s/ARG_ARRAY/$ARRAY_STRING/g; s/ARG_WINDOW/$window/g; s/ARG_GROUP/${GROUP_NAME}/g; s/ARG_REDO/$REDO/g" \
                     scripts/run_bivariate_window.sh > qsub_script.sh
                 qsub qsub_script.sh
+
+                #### Document the phenotypes included
+                printf "%s %s\n" $GROUP_NAME $PHENOTYPE_COMBINATIONS >> data/${NAME}/input/bivariate_groups.txt
             fi
 
         done
