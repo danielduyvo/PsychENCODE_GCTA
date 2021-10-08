@@ -3,7 +3,7 @@
 # qsub options
 #$ -w e
 #$ -N ARG_NAME
-#$ -l h_data=8G,h_rt=2:00:00,highp
+#$ -l h_data=8G,h_rt=4:00:00,highp
 #$ -pe shared 2
 #$ -cwd
 #$ -V
