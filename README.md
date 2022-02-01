@@ -74,7 +74,7 @@ GCTA analysis.
 # The following script will build a directory structure with the provided names, as 
 # well as process and link the resulting files from the provided VCF and BED file.
 
-./scripts/build_project.sh -f EUR HRC gene_SPC 1Mbase_cis genotype.vcf phenotype.bed
+./scripts/build_project.sh -f EUR gene_SPC HRC 1Mbase_cis genotype.vcf phenotype.bed
 ```
 
 Afterwards, the provided script `scripts/run_gcta.sh` will run GCTA on the data.
