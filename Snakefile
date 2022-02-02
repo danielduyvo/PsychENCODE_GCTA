@@ -49,7 +49,7 @@ makedirs(out_hsq_dir)
 # Rules
 rule all:
     input:
-        expand(out_greml_intermediate_dir + "{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+        expand(out_greml_intermediate_dir + ".{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
 
 # Processing genotype files
 rule vcf_to_bed:
