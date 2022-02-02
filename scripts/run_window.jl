@@ -46,7 +46,7 @@ function greml(phenotypeind::Integer)
             --out $cisplink \
             --make-bed`)
     catch error
-        print("$ID does not have any cis-SNPs")
+        println("$ID does not have any cis-SNPs")
         touch("$(snakemake.params["outgremlintermediatedir"]).$ID.done")
         return
     end
@@ -93,38 +93,41 @@ function greml(phenotypeind::Integer)
         println(io, cisgrm)
         println(io, transgrm)
     end
-    if success(`gcta64 \
-               --reml \
-               --reml-alg 0 \
-               --reml-maxit 10000 \
-               --mpheno $phenotypeind \
-               --mgrm $gremlmgrmslist \
-               --pheno $(snakemake.input["phenotype"]) \
-               --covar $(snakemake.input["qualcov"]) \
-               --qcovar $(snakemake.input["quantcov"]) \
-               --reml-lrt 1 2 \
-               --out $(snakemake.params["outhsqdir"])$ID "||" \
-               gcta64 \
-               --reml \
-               --reml-alg 2 \
-               --reml-maxit 10000 \
-               --mpheno $phenotypeind \
-               --mgrm $gremlmgrmslist \
-               --pheno $(snakemake.input["phenotype"]) \
-               --covar $(snakemake.input["qualcov"]) \
-               --qcovar $(snakemake.input["quantcov"]) \
-               --reml-lrt 1 2 \
-               --out $(snakemake.params["outhsqdir"])$ID`)
-        run(`plink --bfile $(snakemake.params["genotypeprefix"]) \
-                        --extract range $plinkrangefile \
-                        --remove $(snakemake.input["excludedsamples"]) \
-                        --write-snplist \
-                        --out $snplist`)
-        open(snplist, "a") do io
-            write(io, "cisSNPs\t" * readchomp(`wc -l '<' $snplist`))
+    try
+        if !success(`gcta64 \
+                    --reml \
+                    --reml-alg 0 \
+                    --reml-maxit 10000 \
+                    --mpheno $phenotypeind \
+                    --mgrm $gremlmgrmslist \
+                    --pheno $(snakemake.input["phenotype"]) \
+                    --covar $(snakemake.input["quantcov"]) \
+                    --qcovar $(snakemake.input["qualcov"]) \
+                    --reml-lrt 1 2 \
+                    --out $(snakemake.params["outhsqdir"])$ID`) 
+            run(`gcta64 \
+                --reml \
+                --reml-alg 2 \
+                --reml-maxit 10000 \
+                --mpheno $phenotypeind \
+                --mgrm $gremlmgrmslist \
+                --pheno $(snakemake.input["phenotype"]) \
+                --covar $(snakemake.input["quantcov"]) \
+                --qcovar $(snakemake.input["qualcov"]) \
+                --reml-lrt 1 2 \
+                --out $(snakemake.params["outhsqdir"])$ID`)
         end
-    else
+        run(`plink --bfile $(snakemake.params["genotypeprefix"]) \
+            --extract range $plinkrangefile \
+            --remove $(snakemake.input["excludedsamples"]) \
+            --write-snplist \
+            --out $snplist`)
+        open(snplist, "a") do io
+            write(io, "cisSNPs\t" * readchomp(pipeline(`cat $snplist`, `wc -l`)))
+        end
+    catch
         println("GREML for $ID ran into error.")
+        return
     end
     println("GREML for $ID completed successfully")
     touch("$(snakemake.params["outgremlintermediatedir"]).$ID.done")
@@ -135,4 +138,5 @@ phenotypedf, phenotypeinfodf = preparedfs()
 for i in 1:size(phenotypeinfodf)[1]
     greml(i)
 end
-touch("$(snakemake.params["outgremlintermediatedir"]).$(snakemake.wildcards["chunk"])_chunk.done")
+touch(joinpath(snakemake.params["outgremlintermediatedir"],
+               ".$(snakemake.wildcards["chunk"])_chunk.done"))

@@ -187,7 +187,7 @@ rule greml_window:
         grmid=expand(out_grm_dir + "genotype{chrom}.grm.id", chrom = chromosomes),
         grmlog=expand(out_grm_dir + "genotype{chrom}.log", chrom = chromosomes),
     output:
-        out_greml_intermediate_dir + "{chunk}_chunk.done"
+        out_greml_intermediate_dir + ".{chunk}_chunk.done"
     params:
         genotypeprefix=out_ped_dir + "genotype",
         grmprefix=out_grm_dir + "genotype",
