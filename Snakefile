@@ -1,9 +1,9 @@
-sensible_defaults = False
+sensible_defaults = True
 
 # Input files
-covariate_file = "/media/danielduyvo/SSD/Users/danie/Github/gcta/data/tri1_15HCP_cov.txt"
-genotype_file = "/media/danielduyvo/SSD/Users/danie/Github/gcta/data/filtered.hg19.sorted.removeRel.vcf.gz"
-phenotype_file = "/media/danielduyvo/SSD/Users/danie/Github/gcta/data/lc.tri1.bed.gz"
+covariate_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri1_15HCP_cov.txt"
+genotype_file = "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeRel.vcf.gz"
+phenotype_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/lc.tri1.bed.gz"
 
 population_name = "tri1"
 genotype_name = "hg19"
@@ -49,11 +49,7 @@ makedirs(out_hsq_dir)
 # Rules
 rule all:
     input:
-        out_grm_dir + "excluded_samples.txt",
-        out_phenotype_dir + "phenotype.txt",
-        out_phenotype_dir + "phenotype_info.txt",
-        out_covariate_dir + "quant_cov.txt",
-        out_covariate_dir + "qual_cov.txt"
+        expand(out_greml_intermediate_dir + "{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
 
 # Processing genotype files
 rule vcf_to_bed:
