@@ -134,7 +134,7 @@ function greml(phenotypeind::Integer)
     return
 end
 
-function cleanup(i)
+function cleanup(phenotypeind::Integer)
     ID, Chr, Start, End, WindowStart, WindowEnd = phenotypeinfodf[phenotypeind,:]
     # If GREML has already been done on this phenotype, skip
     plinkrangefile = joinpath(snakemake.params["outgremlintermediatedir"], ID * "plink_range.txt")
@@ -146,15 +146,25 @@ function cleanup(i)
     transgrm = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_trans_grm")
     gremlmgrmslist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_mgrms_list.txt")
     snplist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "snps")
-
-    try
-        run(`rm $plinkrangefile $cisplink* $transintplink* $transmgrmslist* $cisgrm* \
-            $transintgrm* $transgrm* $gremlmgrmslist* $snplist*`)
-    catch err
-        println(err)
-    finally
-        return
+    filelist = [plinkrangefile,
+                cisplink,
+                transintplink,
+                transmgrmslist,
+                cisgrm,
+                transintgrm,
+                transgrm,
+                gremlmgrmslist,
+                snplist]
+    for file in filelist
+        try
+            run(pipeline(`find $(snakemake.params["outgremlintermediatedir"]) \
+                         -name $file`,
+                         `xargs rm`))
+        catch err
+            println(err)
+        end
     end
+    return
 end
 
 phenotypedf, phenotypeinfodf = preparedfs()
