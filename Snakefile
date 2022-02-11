@@ -9,6 +9,7 @@ population_name = "tri1"
 genotype_name = "hg19"
 covariate_name = "15HCP"
 phenotype_name = "sQTL"
+model = "1Mbase_window"
 
 if (sensible_defaults):
     out_covariate_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/covariates/"
@@ -17,6 +18,7 @@ if (sensible_defaults):
     out_phenotype_dir = f"data/{population_name}/{phenotype_name}/"
     out_greml_intermediate_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/greml_intermediate/"
     out_hsq_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/hsq/"
+    out_results_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/results/"
 else: # Manually select output directories
     out_covariate_dir = "data/tri1_sQTL_covariates/"
     out_ped_dir = "data/tri1_sQTL_ped/"
@@ -24,6 +26,7 @@ else: # Manually select output directories
     out_phenotype_dir = "data/tri1_sQTL_phenotype/"
     out_greml_intermediate_dir = "data/tri1_sQTL_greml_intermediate/"
     out_hsq_dir = "data/tri1_sQTL_hsq/"
+    out_results_dir = "data/tri1_results/"
 
 # Additional constants
 chromosomes = [*range(1, 23)]
@@ -43,13 +46,14 @@ makedirs(out_grm_dir)
 makedirs(out_phenotype_dir)
 makedirs(out_greml_intermediate_dir)
 makedirs(out_hsq_dir)
+makedirs(out_results_dir)
 
 # Functions
 
 # Rules
 rule all:
     input:
-        expand(out_greml_intermediate_dir + ".{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+        out_results_dir + model + ".csv"
 
 # Processing genotype files
 rule vcf_to_bed:
@@ -197,3 +201,12 @@ rule greml_window:
     script:
         "scripts/run_window.jl"
 
+rule compile_greml_window:
+    input:
+        expand(out_greml_intermediate_dir + ".{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+    output:
+        out_results_dir + model + ".csv"
+    params:
+        outhsqdir=out_hsq_dir
+    script:
+        "scripts/hsq_window.jl"

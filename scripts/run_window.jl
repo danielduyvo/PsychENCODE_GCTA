@@ -88,7 +88,7 @@ function greml(phenotypeind::Integer)
 
     # Run GREML
     gremlmgrmslist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_mgrms_list.txt")
-    snplist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "snps")
+    snplist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_snps")
     open(gremlmgrmslist, "w") do io
         println(io, cisgrm)
         println(io, transgrm)
@@ -122,8 +122,8 @@ function greml(phenotypeind::Integer)
             --remove $(snakemake.input["excludedsamples"]) \
             --write-snplist \
             --out $snplist`)
-        open(snplist, "a") do io
-            write(io, "cisSNPs\t" * readchomp(pipeline(`cat $snplist`, `wc -l`)))
+        open("$(snakemake.params["outhsqdir"])$ID.hsq", "a") do io
+            write(io, "cisSNPs\t" * readchomp(pipeline(`cat $snplist.snplist`, `wc -l`)))
         end
     catch
         println("GREML for $ID ran into error.")
@@ -134,35 +134,18 @@ function greml(phenotypeind::Integer)
     return
 end
 
+for file in snpfiles
+    open(joinpath("../hsq", file[1:length(file)-12] * ".hsq"), "a") do io
+        write(io, "cisSNPs\t" * readchomp(pipeline(`cat $file`, `wc -l`)))
+    end
+end
+
 function cleanup(phenotypeind::Integer)
     ID, Chr, Start, End, WindowStart, WindowEnd = phenotypeinfodf[phenotypeind,:]
-    # If GREML has already been done on this phenotype, skip
-    plinkrangefile = joinpath(snakemake.params["outgremlintermediatedir"], ID * "plink_range.txt")
-    cisplink = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_cis")
-    transintplink = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_trans_int")
-    transmgrmslist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_trans_mgrms_list.txt")
-    cisgrm = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_cis_grm")
-    transintgrm = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_trans_int_grm")
-    transgrm = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_trans_grm")
-    gremlmgrmslist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_mgrms_list.txt")
-    snplist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "snps")
-    filelist = [plinkrangefile,
-                cisplink,
-                transintplink,
-                transmgrmslist,
-                cisgrm,
-                transintgrm,
-                transgrm,
-                gremlmgrmslist,
-                snplist]
-    for file in filelist
-        try
-            run(pipeline(`find $(snakemake.params["outgremlintermediatedir"]) \
-                         -name $file`,
-                         `xargs rm`))
-        catch err
-            println(err)
-        end
+    files = readdir(snakemake.params["outgremlintermediatedir"])
+    rmfiles = files[ [startswith(file, ID) for file in files] ]
+    for file in rmfiles
+        rm(joinpath(snakemake.params["outgremlintermediatedir"], file))
     end
     return
 end
@@ -171,6 +154,7 @@ phenotypedf, phenotypeinfodf = preparedfs()
 for i in 1:size(phenotypeinfodf)[1]
     greml(i)
     cleanup(i)
+    flush(stdout) # I think snakemake is buffering the output
 end
 
 touch(snakemake.output[1])
