@@ -134,12 +134,6 @@ function greml(phenotypeind::Integer)
     return
 end
 
-for file in snpfiles
-    open(joinpath("../hsq", file[1:length(file)-12] * ".hsq"), "a") do io
-        write(io, "cisSNPs\t" * readchomp(pipeline(`cat $file`, `wc -l`)))
-    end
-end
-
 function cleanup(phenotypeind::Integer)
     ID, Chr, Start, End, WindowStart, WindowEnd = phenotypeinfodf[phenotypeind,:]
     files = readdir(snakemake.params["outgremlintermediatedir"])
