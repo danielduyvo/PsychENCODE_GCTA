@@ -1,11 +1,11 @@
 sensible_defaults = True
 
 # Input files
-covariate_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri1_15HCP_cov.txt"
+covariate_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri2_10HCP_cov.txt"
 genotype_file = "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeRel.vcf.gz"
-phenotype_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/lc.tri1.bed.gz"
+phenotype_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/lc.tri2.bed.gz"
 
-population_name = "tri1"
+population_name = "tri2"
 genotype_name = "hg19"
 covariate_name = "15HCP"
 phenotype_name = "sQTL"
@@ -30,7 +30,7 @@ else: # Manually select output directories
 
 # Additional constants
 chromosomes = [*range(1, 23)]
-chunks = 1000
+chunks = 10000
 window_size = 1000000
 
 # Making output directories
