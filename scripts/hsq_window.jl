@@ -52,4 +52,4 @@ function readhsqs(hsqdir::String)
 end
 
 gremlresultsdf = readhsqs(snakemake.params["outhsqdir"])
-CSV.write(output[1], gremlresultsdf)
+CSV.write(snakemake.output[1], gremlresultsdf)
