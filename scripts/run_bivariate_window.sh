@@ -109,7 +109,7 @@ echo $LINE | \
             --out data/${PROJECT}/output/grms/${GENE}/${TNAME}_trans
 
     # Run GREML, defaulting to EM if AI fails
-    gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 \
+    gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 100 \
         --reml-bivar-lrt-rg 0 \
         --remove data/${PROJECT}/input/removed_samples.txt \
         --mgrm data/${PROJECT}/output/mgrms/${GENE}/$TNAME.txt \

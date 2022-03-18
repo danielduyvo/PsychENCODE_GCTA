@@ -51,7 +51,7 @@ echo $LINE | \
             --out data/${PROJECT}/output/grms/${ID}_cis
 
         # Run GREML, defaulting to EM if AI fails
-        gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 --mpheno ${SGE_TASK_ID} \
+        gcta64 --reml --thread-num $THREADS --reml-alg 0 --reml-maxit 100 --mpheno ${SGE_TASK_ID} \
             --remove data/${PROJECT}/input/removed_samples.txt \
             --grm data/${PROJECT}/output/grms/${ID}_cis\
             --pheno data/${PROJECT}/input/phenotype \

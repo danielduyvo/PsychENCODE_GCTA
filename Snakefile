@@ -9,15 +9,30 @@ population_name = "tri2"
 genotype_name = "hg19"
 covariate_name = "15HCP"
 phenotype_name = "sQTL"
-model = "1Mbase_window"
+model_type = "window"
+
+# Additional constants
+chromosomes = [*range(1, 23)]
+chunks = 10000
+window_size = 1000000
+
+def readable_bp_number(bp):
+    if ((bp % 1e6) == 0):
+        return f"{int(bp/1e6)}Mbase"
+    elif ((bp % 1e3) == 0):
+        return f"{int(bp/1e3)}kbase"
+    else:
+        return f"{bp}base"
+
+model = f"{readable_bp_number(window_size)}_{model_type}"
 
 if (sensible_defaults):
     out_covariate_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/covariates/"
     out_ped_dir = f"data/{population_name}/{genotype_name}/ped/"
     out_grm_dir = f"data/{population_name}/{genotype_name}/grm/"
     out_phenotype_dir = f"data/{population_name}/{phenotype_name}/"
-    out_greml_intermediate_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/greml_intermediate/"
-    out_hsq_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/hsq/"
+    out_greml_intermediate_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/greml_intermediate/{model}/"
+    out_hsq_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/hsq/{model}/"
     out_results_dir = f"data/{population_name}/{genotype_name}_{phenotype_name}_{covariate_name}/results/"
 else: # Manually select output directories
     out_covariate_dir = "data/tri1_sQTL_covariates/"
@@ -27,11 +42,6 @@ else: # Manually select output directories
     out_greml_intermediate_dir = "data/tri1_sQTL_greml_intermediate/"
     out_hsq_dir = "data/tri1_sQTL_hsq/"
     out_results_dir = "data/tri1_results/"
-
-# Additional constants
-chromosomes = [*range(1, 23)]
-chunks = 10000
-window_size = 1000000
 
 # Making output directories
 import os
@@ -174,7 +184,15 @@ rule split_covariate:
 # Checkpoint before running GREML
 
 # Running GREML
-rule greml_window:
+
+if (model_type == "window"):
+    greml_script = "scripts/run_window.jl"
+    compile_script = "scripts/hsq_window.jl"
+elif (model_type == "cis"):
+    greml_script = "scripts/run_cis.jl"
+    compile_script = "scripts/hsq_cis.jl"
+
+rule greml:
     input:
         genotypebed=out_ped_dir + "genotype.bed",
         genotypebim=out_ped_dir + "genotype.bim",
@@ -199,9 +217,9 @@ rule greml_window:
         outhsqdir=out_hsq_dir,
         windowsize = window_size
     script:
-        "scripts/run_window.jl"
+        greml_script
 
-rule compile_greml_window:
+rule compile_greml:
     input:
         expand(out_greml_intermediate_dir + ".{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
     output:
@@ -209,4 +227,5 @@ rule compile_greml_window:
     params:
         outhsqdir=out_hsq_dir
     script:
-        "scripts/hsq_window.jl"
+        compile_script
+

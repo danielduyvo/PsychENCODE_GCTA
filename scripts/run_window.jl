@@ -97,7 +97,7 @@ function greml(phenotypeind::Integer)
         if !success(`gcta64 \
                     --reml \
                     --reml-alg 0 \
-                    --reml-maxit 10000 \
+                    --reml-maxit 100 \
                     --mpheno $phenotypeind \
                     --mgrm $gremlmgrmslist \
                     --pheno $(snakemake.input["phenotype"]) \

@@ -43,7 +43,7 @@ echo pair: $I $J \n
 echo line number: $L1 $L2 \n
 echo transcript names: $T1 $T2 \n
 # Run GREML, defaulting to EM if AI fails
-gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 10000 \
+gcta64 --reml-bivar $L1 $L2 --thread-num $THREADS --reml-alg 0 --reml-maxit 100 \
     --reml-bivar-lrt-rg 0 \
     --remove data/${PROJECT}/input/removed_samples.txt \
     --grm data/${PROJECT}/output/${GENE}/grms/complete\
