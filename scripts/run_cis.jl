@@ -74,7 +74,7 @@ function greml(phenotypeind::Integer)
                     --pheno $(snakemake.input["phenotype"]) \
                     --covar $(snakemake.input["quantcov"]) \
                     --qcovar $(snakemake.input["qualcov"]) \
-                    --reml-lrt 1 2 \
+                    --reml-lrt 1 \
                     --out $(snakemake.params["outhsqdir"])$ID`) 
             run(`gcta64 \
                 --reml \
@@ -85,7 +85,7 @@ function greml(phenotypeind::Integer)
                 --pheno $(snakemake.input["phenotype"]) \
                 --covar $(snakemake.input["quantcov"]) \
                 --qcovar $(snakemake.input["qualcov"]) \
-                --reml-lrt 1 2 \
+                --reml-lrt 1 \
                 --out $(snakemake.params["outhsqdir"])$ID`)
         end
         run(`plink --bfile $(snakemake.params["genotypeprefix"]) \
