@@ -1,0 +1,14 @@
+{
+    "sensible_defaults" : true,
+    "covariate_file" : "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri2_10HCP_cov.txt",
+    "genotype_file" : "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeRel.vcf.gz",
+    "phenotype_file" : "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/lc.tri2.bed.gz",
+    "population_name" : "tri2",
+    "genotype_name" : "hg19",
+    "covariate_name" : "15HCP",
+    "phenotype_name" : "sQTL",
+    "model_type" : "window",
+    "chromosomes": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+    "chunks" : 10000,
+    "window_size" : 1000000
+}

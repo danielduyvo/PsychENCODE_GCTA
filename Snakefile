@@ -1,20 +1,26 @@
+import json
+
+f = open("params.json")
+params_dict = json.load(f)
+f.close()
+
 sensible_defaults = True
 
 # Input files
-covariate_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri2_10HCP_cov.txt"
-genotype_file = "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeRel.vcf.gz"
-phenotype_file = "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/lc.tri2.bed.gz"
+covariate_file = params_dict["covariate_file"]
+genotype_file = params_dict["genotype_file"]
+phenotype_file = params_dict["phenotype_file"]
 
-population_name = "tri2"
-genotype_name = "hg19"
-covariate_name = "15HCP"
-phenotype_name = "sQTL"
-model_type = "window"
+population_name = params_dict["population_name"]
+genotype_name = params_dict["genotype_name"]
+covariate_name = params_dict["covariate_name"]
+phenotype_name = params_dict["phenotype_name"]
+model_type = params_dict["model_type"]
 
 # Additional constants
-chromosomes = [*range(1, 23)]
-chunks = 10000
-window_size = 1000000
+chromosomes = params_dict["chromosomes"]
+chunks = params_dict["chunks"]
+window_size = params_dict["window_size"]
 
 def readable_bp_number(bp):
     if ((bp % 1e6) == 0):
