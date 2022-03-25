@@ -32,7 +32,7 @@ function readhsqs(hsqdir::String)
                   SE_V_Phe = hsq[3,3]::Float64,
                   SE_Cis_h2 = hsq[4,3]::Float64,
                   P_val = hsq[9,2]::Float64,
-                  Cis_SNPs = hsq[11,2]::Int64)
+                  Cis_SNPs = convert(Int64, hsq[11,2]))
         gremlresults[rown, :] = hsqrow
         rown = rown + 1
     end

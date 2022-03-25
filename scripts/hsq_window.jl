@@ -44,7 +44,7 @@ function readhsqs(hsqdir::String)
                   SE_Trans_h2 = hsq[6,3]::Float64,
                   SE_SNP_h2 = hsq[7,3]::Float64,
                   P_val = hsq[12,2]::Float64,
-                  Cis_SNPs = hsq[14,2]::Int64)
+                  Cis_SNPs = convert(Int64, hsq[14,2]))
         gremlresults[rown, :] = hsqrow
         rown = rown + 1
     end
