@@ -4,7 +4,7 @@ f = open("params.json")
 params_dict = json.load(f)
 f.close()
 
-sensible_defaults = True
+sensible_defaults = params_dict["sensible_defaults"]
 
 # Input files
 covariate_file = params_dict["covariate_file"]
@@ -21,6 +21,7 @@ model_type = params_dict["model_type"]
 chromosomes = params_dict["chromosomes"]
 chunks = params_dict["chunks"]
 window_size = params_dict["window_size"]
+qsub_array = params_dict["qsub_array"]
 
 def readable_bp_number(bp):
     if ((bp % 1e6) == 0):
@@ -195,35 +196,79 @@ if (model_type == "window"):
     greml_script = "scripts/run_window.jl"
     compile_script = "scripts/hsq_window.jl"
 elif (model_type == "cis"):
-    greml_script = "scripts/run_cis.jl"
+    greml_script = "scripts/run_cis_greml_wrapper.jl"
     compile_script = "scripts/hsq_cis.jl"
 
-rule greml:
-    input:
-        genotypebed=out_ped_dir + "genotype.bed",
-        genotypebim=out_ped_dir + "genotype.bim",
-        genotypefam=out_ped_dir + "genotype.fam",
-        genotypelog=out_ped_dir + "genotype.log",
-        genotypenosex=out_ped_dir + "genotype.nosex",
-        excludedsamples=out_grm_dir + "excluded_samples.txt",
-        phenotype=out_phenotype_dir + "phenotype.txt",
-        phenotypeinfo=out_phenotype_dir + "phenotype_info.txt_{chunk}",
-        quantcov=out_covariate_dir + "quant_cov.txt",
-        qualcov=out_covariate_dir + "qual_cov.txt",
-        grmN=expand(out_grm_dir + "genotype{chrom}.grm.N.bin", chrom = chromosomes),
-        grmbin=expand(out_grm_dir + "genotype{chrom}.grm.bin", chrom = chromosomes),
-        grmid=expand(out_grm_dir + "genotype{chrom}.grm.id", chrom = chromosomes),
-        grmlog=expand(out_grm_dir + "genotype{chrom}.log", chrom = chromosomes),
-    output:
-        out_greml_intermediate_dir + ".{chunk}_chunk.done"
-    params:
-        genotypeprefix=out_ped_dir + "genotype",
-        grmprefix=out_grm_dir + "genotype",
-        outgremlintermediatedir=out_greml_intermediate_dir,
-        outhsqdir=out_hsq_dir,
-        windowsize = window_size
-    script:
-        greml_script
+if qsub_array:
+    rule greml:
+        input:
+            genotypebed=out_ped_dir + "genotype.bed",
+            genotypebim=out_ped_dir + "genotype.bim",
+            genotypefam=out_ped_dir + "genotype.fam",
+            genotypelog=out_ped_dir + "genotype.log",
+            genotypenosex=out_ped_dir + "genotype.nosex",
+            excludedsamples=out_grm_dir + "excluded_samples.txt",
+            phenotype=out_phenotype_dir + "phenotype.txt",
+            phenotypeinfo=expand(out_phenotype_dir + "phenotype_info.txt_{chunk}", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+            quantcov=out_covariate_dir + "quant_cov.txt",
+            qualcov=out_covariate_dir + "qual_cov.txt",
+            grmN=expand(out_grm_dir + "genotype{chrom}.grm.N.bin", chrom = chromosomes),
+            grmbin=expand(out_grm_dir + "genotype{chrom}.grm.bin", chrom = chromosomes),
+            grmid=expand(out_grm_dir + "genotype{chrom}.grm.id", chrom = chromosomes),
+            grmlog=expand(out_grm_dir + "genotype{chrom}.log", chrom = chromosomes)
+        output:
+            expand(out_greml_intermediate_dir + ".{chunk}_chunk.done", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+        params:
+            genotypeprefix=out_ped_dir + "genotype",
+            grmprefix=out_grm_dir + "genotype",
+            outgremlintermediatedir=out_greml_intermediate_dir,
+            outhsqdir=out_hsq_dir,
+            windowsize = window_size
+        run:
+            with open(out_greml_intermediate_dir + "snakemake_info.json", "w") as outfile:
+                json.dump({
+                    "input": input,
+                    "output": output,
+                    "params": params
+                    },
+                    outfile)
+            shell("qsub "
+            "-N qsub_greml "
+            "-o logs/qsub_greml.log"
+            "-e logs/qsub_greml.err"
+            "-t 1:{chunks} "
+            "scripts/qsub_run_cis.sh " + out_greml_intermediate_dir + "snakemake_info.json")
+            shell("while [[ -n $(qstat | grep qsub_greml ) ]]; do "
+                "sleep 300; "
+                "done")
+            shell("rm " + out_greml_intermediate_dir + "snakemake_info.json")
+else:
+    rule greml:
+        input:
+            genotypebed=out_ped_dir + "genotype.bed",
+            genotypebim=out_ped_dir + "genotype.bim",
+            genotypefam=out_ped_dir + "genotype.fam",
+            genotypelog=out_ped_dir + "genotype.log",
+            genotypenosex=out_ped_dir + "genotype.nosex",
+            excludedsamples=out_grm_dir + "excluded_samples.txt",
+            phenotype=out_phenotype_dir + "phenotype.txt",
+            phenotypeinfo=out_phenotype_dir + "phenotype_info.txt_{chunk}",
+            quantcov=out_covariate_dir + "quant_cov.txt",
+            qualcov=out_covariate_dir + "qual_cov.txt",
+            grmN=expand(out_grm_dir + "genotype{chrom}.grm.N.bin", chrom = chromosomes),
+            grmbin=expand(out_grm_dir + "genotype{chrom}.grm.bin", chrom = chromosomes),
+            grmid=expand(out_grm_dir + "genotype{chrom}.grm.id", chrom = chromosomes),
+            grmlog=expand(out_grm_dir + "genotype{chrom}.log", chrom = chromosomes)
+        output:
+            out_greml_intermediate_dir + ".{chunk}_chunk.done"
+        params:
+            genotypeprefix=out_ped_dir + "genotype",
+            grmprefix=out_grm_dir + "genotype",
+            outgremlintermediatedir=out_greml_intermediate_dir,
+            outhsqdir=out_hsq_dir,
+            windowsize = window_size
+        script:
+            greml_script
 
 rule compile_greml:
     input:

@@ -1,15 +1,32 @@
 #!/usr/bin/env julia
 
-using CSV,DataFrames
+using CSV, DataFrames
 
-function preparedfs()
-    phenotypedf = CSV.read(snakemake.input["phenotype"], DataFrame,
+# Necessary inputs:
+# @param input Dict: keys:
+# excludedsamples
+# phenotype
+# quantcov
+# qualcov
+# @param params Dict: keys:
+# genotypeprefix
+# grmprefix
+# outgremlintermediatedir
+# outhsqdir
+# @param phenotypefile AbstractString: Path to phenotype file
+# @param phenotypeinfofile AbstractString: Path to phenotype info file
+# @param windowsize Integer: Number of base pairs the window extends in
+# either direction
+
+function preparedfs(phenotypefile::AbstractString, phenotypeinfofile::AbstractString,
+        windowsize::Integer)
+    phenotypedf = CSV.read(phenotypefile, DataFrame,
                            header = 0)
-    phenotypeinfodf = CSV.read(snakemake.input["phenotypeinfo"], DataFrame,
+    phenotypeinfodf = CSV.read(phenotypeinfofile, DataFrame,
                                header = [:ID, :Chr, :Start, :End])
     transform!(phenotypeinfodf,
                :Start => function(col)
-                   newcol = col .- snakemake.params["windowsize"]
+                   newcol = col .- windowsize
                    for i in 1:length(newcol)
                        if newcol[i] < 0
                            newcol[i] = 0
@@ -18,20 +35,34 @@ function preparedfs()
                    return(newcol)
                end => :WindowStart,
                :End => function(col)
-                   col .+ snakemake.params["windowsize"]
+                   col .+ windowsize
                end => :WindowEnd)
     return(phenotypedf, phenotypeinfodf)
 end
 
-function greml(phenotypeind::Integer)
+# @param input Dict with keys:
+# excludedsamples
+# phenotype
+# quantcov
+# qualcov
+# @param params Dict with keys:
+# genotypeprefix
+# grmprefix
+# outgremlintermediatedir
+# outhsqdir
+function greml(
+        phenotypeind::Integer,
+        input::Dict,
+        params::Dict
+    )
     ID, Chr, Start, End, WindowStart, WindowEnd = phenotypeinfodf[phenotypeind,:]
     # If GREML has already been done on this phenotype, skip
-    if isfile("$(snakemake.params["outgremlintermediatedir"]).$ID.done")
+    if isfile("$(params["outgremlintermediatedir"]).$ID.done")
         println("GREML for $ID has already been performed")
         return
     end
-    plinkrangefile = joinpath(snakemake.params["outgremlintermediatedir"], ID * "plink_range.txt")
-    cisplink = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_cis")
+    plinkrangefile = joinpath(params["outgremlintermediatedir"], ID * "plink_range.txt")
+    cisplink = joinpath(params["outgremlintermediatedir"], ID * "_cis")
     open(plinkrangefile, "w") do io
         write(io, "$Chr $WindowStart $WindowEnd R1")
     end
@@ -39,19 +70,19 @@ function greml(phenotypeind::Integer)
     try
         # Generate cis subset of genotype data
         run(`plink \
-            --bfile $(snakemake.params["genotypeprefix"]) \
+            --bfile $(params["genotypeprefix"]) \
             --extract range $plinkrangefile \
-            --remove $(snakemake.input["excludedsamples"]) \
+            --remove $(input["excludedsamples"]) \
             --out $cisplink \
             --make-bed`)
     catch error
         println("$ID does not have any cis-SNPs")
-        touch("$(snakemake.params["outgremlintermediatedir"]).$ID.done")
+        touch("$(params["outgremlintermediatedir"]).$ID.done")
         return
     end
 
     # Generate GRMs
-    cisgrm = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_cis_grm")
+    cisgrm = joinpath(params["outgremlintermediatedir"], ID * "_cis_grm")
     run(`gcta64 \
         --bfile $cisplink \
         --out $cisgrm \
@@ -59,8 +90,8 @@ function greml(phenotypeind::Integer)
         --make-grm-alg 0`)
 
     # Run GREML
-    gremlmgrmslist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_mgrms_list.txt")
-    snplist = joinpath(snakemake.params["outgremlintermediatedir"], ID * "_snps")
+    gremlmgrmslist = joinpath(params["outgremlintermediatedir"], ID * "_mgrms_list.txt")
+    snplist = joinpath(params["outgremlintermediatedir"], ID * "_snps")
     open(gremlmgrmslist, "w") do io
         println(io, cisgrm)
     end
@@ -71,29 +102,29 @@ function greml(phenotypeind::Integer)
                     --reml-maxit 100 \
                     --mpheno $phenotypeind \
                     --mgrm $gremlmgrmslist \
-                    --pheno $(snakemake.input["phenotype"]) \
-                    --covar $(snakemake.input["quantcov"]) \
-                    --qcovar $(snakemake.input["qualcov"]) \
+                    --pheno $(input["phenotype"]) \
+                    --covar $(input["quantcov"]) \
+                    --qcovar $(input["qualcov"]) \
                     --reml-lrt 1 \
-                    --out $(snakemake.params["outhsqdir"])$ID`) 
+                    --out $(params["outhsqdir"])$ID`) 
             run(`gcta64 \
                 --reml \
                 --reml-alg 2 \
                 --reml-maxit 10000 \
                 --mpheno $phenotypeind \
                 --mgrm $gremlmgrmslist \
-                --pheno $(snakemake.input["phenotype"]) \
-                --covar $(snakemake.input["quantcov"]) \
-                --qcovar $(snakemake.input["qualcov"]) \
+                --pheno $(input["phenotype"]) \
+                --covar $(input["quantcov"]) \
+                --qcovar $(input["qualcov"]) \
                 --reml-lrt 1 \
-                --out $(snakemake.params["outhsqdir"])$ID`)
+                --out $(params["outhsqdir"])$ID`)
         end
-        run(`plink --bfile $(snakemake.params["genotypeprefix"]) \
+        run(`plink --bfile $(params["genotypeprefix"]) \
             --extract range $plinkrangefile \
-            --remove $(snakemake.input["excludedsamples"]) \
+            --remove $(input["excludedsamples"]) \
             --write-snplist \
             --out $snplist`)
-        open("$(snakemake.params["outhsqdir"])$ID.hsq", "a") do io
+        open("$(params["outhsqdir"])$ID.hsq", "a") do io
             write(io, "cisSNPs\t" * readchomp(pipeline(`cat $snplist.snplist`, `wc -l`)))
         end
     catch
@@ -101,26 +132,18 @@ function greml(phenotypeind::Integer)
         return
     end
     println("GREML for $ID completed successfully")
-    touch("$(snakemake.params["outgremlintermediatedir"]).$ID.done")
+    touch("$(params["outgremlintermediatedir"]).$ID.done")
     return
 end
 
-function cleanup(phenotypeind::Integer)
+# @param params includes "outgremlintermediatedir"
+function cleanup(phenotypeind::Integer, params::Dict)
     ID, Chr, Start, End, WindowStart, WindowEnd = phenotypeinfodf[phenotypeind,:]
-    files = readdir(snakemake.params["outgremlintermediatedir"])
+    files = readdir(params["outgremlintermediatedir"])
     rmfiles = files[ [startswith(file, ID) for file in files] ]
     for file in rmfiles
-        rm(joinpath(snakemake.params["outgremlintermediatedir"], file))
+        rm(joinpath(params["outgremlintermediatedir"], file))
     end
     return
 end
-
-phenotypedf, phenotypeinfodf = preparedfs()
-for i in 1:size(phenotypeinfodf)[1]
-    greml(i)
-    cleanup(i)
-    flush(stdout) # I think snakemake is buffering the output
-end
-
-touch(snakemake.output[1])
 
