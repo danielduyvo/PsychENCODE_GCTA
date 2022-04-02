@@ -209,7 +209,7 @@ if qsub_array:
             genotypenosex=out_ped_dir + "genotype.nosex",
             excludedsamples=out_grm_dir + "excluded_samples.txt",
             phenotype=out_phenotype_dir + "phenotype.txt",
-            phenotypeinfo=expand(out_phenotype_dir + "phenotype_info.txt_{chunk}", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]])
+            phenotypeinfo=expand(out_phenotype_dir + "phenotype_info.txt_{chunk}", chunk = [str(chunk).rjust(7, '0') for chunk in [*range(0, chunks)]]),
             quantcov=out_covariate_dir + "quant_cov.txt",
             qualcov=out_covariate_dir + "qual_cov.txt",
             grmN=expand(out_grm_dir + "genotype{chrom}.grm.N.bin", chrom = chromosomes),
@@ -227,17 +227,29 @@ if qsub_array:
         run:
             with open(out_greml_intermediate_dir + "snakemake_info.json", "w") as outfile:
                 json.dump({
-                    "input": input,
+                    "input": {
+                        "excludedsamples": input.excludedsamples,
+                        "phenotype": input.phenotype,
+                        "phenotypeinfo": input.phenotypeinfo,
+                        "quantcov": input.quantcov,
+                        "qualcov": input.qualcov
+                        },
                     "output": output,
-                    "params": params
+                    "params": {
+                        "genotypeprefix": params.genotypeprefix,
+                        "grmprefix": params.grmprefix,
+                        "outgremlintermediatedir": params.outgremlintermediatedir,
+                        "outhsqdir": params.outhsqdir,
+                        "windowsize": params.windowsize
+                        }
                     },
                     outfile)
             shell("qsub "
             "-N qsub_greml "
-            "-o logs/qsub_greml.log"
-            "-e logs/qsub_greml.err"
+            "-o logs/qsub_greml.log "
+            "-e logs/qsub_greml.err "
             "-t 1:{chunks} "
-            "scripts/qsub_run_cis.sh " + out_greml_intermediate_dir + "snakemake_info.json")
+            "scripts/run_cis_qsub.sh " + out_greml_intermediate_dir + "snakemake_info.json")
             shell("while [[ -n $(qstat | grep qsub_greml ) ]]; do "
                 "sleep 300; "
                 "done")

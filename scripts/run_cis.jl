@@ -96,7 +96,7 @@ function greml(
         println(io, cisgrm)
     end
     try
-        if !success(`gcta64 \
+        if !(success(`gcta64 \
                     --reml \
                     --reml-alg 0 \
                     --reml-maxit 100 \
@@ -106,7 +106,18 @@ function greml(
                     --covar $(input["quantcov"]) \
                     --qcovar $(input["qualcov"]) \
                     --reml-lrt 1 \
-                    --out $(params["outhsqdir"])$ID`) 
+                    --out $(params["outhsqdir"])$ID`) ||
+             success(`gcta64 \
+                    --reml \
+                    --reml-alg 1 \
+                    --reml-maxit 100 \
+                    --mpheno $phenotypeind \
+                    --mgrm $gremlmgrmslist \
+                    --pheno $(input["phenotype"]) \
+                    --covar $(input["quantcov"]) \
+                    --qcovar $(input["qualcov"]) \
+                    --reml-lrt 1 \
+                    --out $(params["outhsqdir"])$ID`))
             run(`gcta64 \
                 --reml \
                 --reml-alg 2 \

@@ -1,8 +1,14 @@
 #!/usr/bin/env julia
 using JSON
 
-snakemake = JSON.parse(ARGS[2])
-include("scripts/run_cis.jl")
+snakemake = JSON.parsefile(ARGS[2])
+struct Snakemake
+    input::Dict
+    params::Dict
+    output::AbstractVector
+end
+snakemake = Snakemake(snakemake["input"], snakemake["params"], snakemake["output"])
+include("run_cis.jl")
 
 phenotypedf, phenotypeinfodf = preparedfs(snakemake.input["phenotype"],
                                           snakemake.input["phenotypeinfo"
