@@ -7,16 +7,18 @@ generatephenotypefiles = function(bedfilename, phenotypefilename, infofilename)
     chrcolname = names(beddf)[1]
     newchrcolname = replace(chrcolname, r"#" => "")
     rename!(beddf, chrcolname => newchrcolname)
-    if !(Int <: eltype.(eachcol(beddf))[1])
+    if !(eltype.(eachcol(beddf))[1] <: Integer)
         subset!(beddf, Symbol(newchrcolname) => chrom -> match(r"\D", chrom) == nothing)
     end
 
     # FastQTL has 4 columns before the samples, QTLtools has 6
     idcol = 4
-    if (Number <: eltype.(eachcol(beddf))[5])
+    if (eltype.(eachcol(beddf))[5] <: Number)
         firstcol = 5
-    else
+    elseif (eltype.(eachcol(beddf))[7] <: Number)
         firstcol = 7
+    else
+        throw("Does not match either FastQTL or QTLTools output")
     end
 
     phenotypemat = Matrix(select(beddf, firstcol:size(beddf)[2]))
