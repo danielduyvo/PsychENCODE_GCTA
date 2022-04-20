@@ -246,8 +246,8 @@ if qsub_array:
                     outfile)
             shell("qsub "
             "-N qsub_greml "
-            "-o logs/qsub_greml.log "
-            "-e logs/qsub_greml.err "
+            "-o logs/joblog.qsub_greml.\$TASK_ID.log "
+            "-e logs/joblog.qsub_greml.\$TASK_ID.err "
             "-t 1:{chunks} "
             "scripts/run_cis_qsub.sh " + out_greml_intermediate_dir + "snakemake_info.json")
             shell("while [[ -n $(qstat | grep qsub_greml ) ]]; do "
