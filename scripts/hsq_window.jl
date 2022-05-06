@@ -1,34 +1,34 @@
 #!/usr/bin/env julia
 
-using CSV,DataFrames
+using CSV, DataFrames, Glob
 
 function readhsqs(hsqdir::String)
-    files = readdir(hsqdir)
-    gremlfiles = files[ [splitext(file)[2] == ".hsq" for file in files] ]
+    gremlfiles = glob(joinpath(hsqdir, "*.hsq"))
     nresults = length(gremlfiles)
-    gremlresults = DataFrame(:ID => Array{Union{Missing, String}}(missing, nresults),
-                             :V_Cis => Array{Union{Missing, Float64}}(missing, nresults),
-                             :V_Trans => Array{Union{Missing, Float64}}(missing, nresults),
-                             :V_Res => Array{Union{Missing, Float64}}(missing, nresults),
-                             :V_Phe => Array{Union{Missing, Float64}}(missing, nresults),
-                             :Cis_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :Trans_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SNP_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_V_Cis => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_V_Trans => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_V_Res => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_V_Phe => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_Cis_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_Trans_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :SE_SNP_h2 => Array{Union{Missing, Float64}}(missing, nresults),
-                             :P_val => Array{Union{Missing, Float64}}(missing, nresults),
-                             :Cis_SNPs => Array{Union{Missing, Int64}}(missing, nresults))
+    gremlresults = DataFrame(:ID => Array{String}(undef, nresults),
+                             :V_Cis => Array{Float64}(undef, nresults),
+                             :V_Trans => Array{Float64}(undef, nresults),
+                             :V_Res => Array{Float64}(undef, nresults),
+                             :V_Phe => Array{Float64}(undef, nresults),
+                             :Cis_h2 => Array{Float64}(undef, nresults),
+                             :Trans_h2 => Array{Float64}(undef, nresults),
+                             :SNP_h2 => Array{Float64}(undef, nresults),
+                             :SE_V_Cis => Array{Float64}(undef, nresults),
+                             :SE_V_Trans => Array{Float64}(undef, nresults),
+                             :SE_V_Res => Array{Float64}(undef, nresults),
+                             :SE_V_Phe => Array{Float64}(undef, nresults),
+                             :SE_Cis_h2 => Array{Float64}(undef, nresults),
+                             :SE_Trans_h2 => Array{Float64}(undef, nresults),
+                             :SE_SNP_h2 => Array{Float64}(undef, nresults),
+                             :P_val => Array{Float64}(undef, nresults),
+                             :Cis_SNPs => Array{Int64}(undef, nresults))
+    allowmissing!(gremlresults)
     rown = 1
     for file in gremlfiles
-        hsq = CSV.read(joinpath(hsqdir, file), DataFrame, header = 0, delim = '\t', 
+        hsq = CSV.read(file, DataFrame; header = 0, delim = '\t', 
                        skipto = 2, types = [String, Float64, Float64],
                        silencewarnings = true)
-        hsqrow = (ID = splitext(file)[1]::String,
+        hsqrow = (ID = splitext(basename(file))[1]::String,
                   V_Cis = hsq[1,2]::Float64,
                   V_Trans = hsq[2,2]::Float64,
                   V_Res = hsq[3,2]::Float64,
@@ -44,7 +44,7 @@ function readhsqs(hsqdir::String)
                   SE_Trans_h2 = hsq[6,3]::Float64,
                   SE_SNP_h2 = hsq[7,3]::Float64,
                   P_val = hsq[12,2]::Float64,
-                  Cis_SNPs = convert(Int64, hsq[14,2]))
+                  Cis_SNPs = size(hsq, 1) == 14 ? convert(Int64, hsq[14,2]) : missing)
         gremlresults[rown, :] = hsqrow
         rown = rown + 1
     end
