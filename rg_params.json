@@ -1,0 +1,35 @@
+{
+    "sensible_defaults" : false,
+    "covariate_file" : [
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/chuanjiao/tri1_25HCP.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/chuanjiao/tri2_15HCP.txt"
+    ],
+    "genotype_file" : [
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester1.vcf.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester2.vcf.gz"
+    ],
+    "phenotype_file" : [
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/gene.counts.scaled.normalized.trimester1.bed.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/gene.counts.scaled.normalized.trimester2.bed.gz"
+    ],
+    "population_name" : [
+        "tri1",
+        "tri2"
+    ],
+    "genotype_name" : [
+        "hg19",
+        "hg19"
+    ],
+    "covariate_name" : [
+        "25HCP",
+        "15HCP"
+    ],
+    "phenotype_name" : 
+        "gene",
+    "model_type" : 
+        "cis",
+    "chromosomes" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+    "chunks" : 10000,
+    "window_size" : 1000000,
+    "qsub_array" : true
+}
